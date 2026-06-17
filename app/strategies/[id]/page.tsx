@@ -4,7 +4,6 @@ import { useStore } from '@/lib/store'
 import { formatINR } from '@/lib/compute'
 import { PortfolioFund, Strategy } from '@/lib/types'
 import { ArrowLeft, Edit2, TrendingUp, RefreshCw, AlertTriangle } from 'lucide-react'
-import { clsx } from 'clsx'
 
 const SECTION_COLOR: Record<string, string> = {
   EQUITY: '#818cf8',
@@ -40,9 +39,7 @@ function FundRow({ fund, rank }: { fund: PortfolioFund; rank: number }) {
         <p className="text-[10px] text-[#444]">{fund.fundHouse}</p>
       </td>
       <td className="px-4 py-3 text-[11px] text-[#555]">{fund.subCategory}</td>
-      <td className="px-4 py-3">
-        <SectionBadge section={fund.section} />
-      </td>
+      <td className="px-4 py-3"><SectionBadge section={fund.section} /></td>
       <td className="px-4 py-3 text-[12px] text-[#22c55e] font-semibold">{fund.score.toFixed(0)}</td>
       <td className="px-4 py-3 text-[12px] text-[#f0f0f0]">{fund.targetWeight.toFixed(1)}%</td>
       <td className="px-4 py-3 text-[12px] text-[#f0f0f0] font-medium">{formatINR(fund.allocation)}</td>
@@ -93,15 +90,12 @@ export default function PortfolioViewerPage() {
   const funds = strategy.funds ?? []
   const sections = [...new Set(strategy.config.universes.map(u => u.section))]
   const universeLabels = strategy.config.universes.map(u => u.label)
-
-  // Concentration warnings
-  const maxWeight = Math.max(...funds.map(f => f.targetWeight))
+  const maxWeight = funds.length ? Math.max(...funds.map(f => f.targetWeight)) : 0
   const highConcentration = maxWeight > 40
   const singleSector = sections.length === 1 && funds.length < 5
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      {/* Top nav */}
       <div className="border-b border-[#1f1f1f] px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push('/strategies')} className="flex items-center gap-1.5 text-[13px] text-[#555] hover:text-[#888] transition-colors cursor-pointer">
@@ -117,21 +111,16 @@ export default function PortfolioViewerPage() {
           >
             <Edit2 size={12} /> Edit Strategy
           </button>
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-[#f0f0f0] border border-[#3a3a3a] rounded-lg hover:border-[#555] transition-all cursor-pointer"
-          >
+          <button className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-[#f0f0f0] border border-[#3a3a3a] rounded-lg hover:border-[#555] transition-all cursor-pointer">
             <RefreshCw size={12} /> Rebalance
           </button>
-          <button
-            className="flex items-center gap-1.5 px-4 py-1.5 text-[12px] text-black font-semibold bg-[#22c55e] rounded-lg hover:bg-[#16a34a] transition-colors cursor-pointer"
-          >
+          <button className="flex items-center gap-1.5 px-4 py-1.5 text-[12px] text-black font-semibold bg-[#22c55e] rounded-lg hover:bg-[#16a34a] transition-colors cursor-pointer">
             <TrendingUp size={12} /> Invest Now
           </button>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Header strip */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-[22px] font-bold text-[#f0f0f0] mb-1">{strategy.name}</h1>
@@ -149,12 +138,11 @@ export default function PortfolioViewerPage() {
           </div>
         </div>
 
-        {/* Warnings */}
         {highConcentration && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-[#451a03] border border-[#92400e] mb-4">
             <AlertTriangle size={13} className="text-[#f59e0b] shrink-0" />
             <p className="text-[12px] text-[#f59e0b]">
-              Highest allocation is {maxWeight.toFixed(1)}% — concentrated exposure to a single fund. Consider adding more funds or capping max weight.
+              Highest allocation is {maxWeight.toFixed(1)}% — concentrated exposure. Consider adding more funds or capping max weight.
             </p>
           </div>
         )}
@@ -165,7 +153,6 @@ export default function PortfolioViewerPage() {
           </div>
         )}
 
-        {/* Portfolio metrics */}
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
           <MetricCard label="Wtd 3Y CAGR" value={`${(strategy.weightedCAGR3y ?? 0).toFixed(1)}%`} color="#22c55e" />
           <MetricCard label="Wtd Sharpe 3Y" value={(strategy.weightedSharpe3y ?? 0).toFixed(2)} color="#818cf8" />
@@ -175,7 +162,6 @@ export default function PortfolioViewerPage() {
           <MetricCard label="Residual Cash" value={formatINR(strategy.remainingCash ?? 0)} sub="uninvested" />
         </div>
 
-        {/* Constituents table */}
         <div className="rounded-xl border border-[#2a2a2a] bg-[#111] overflow-hidden mb-6">
           <div className="px-4 py-3 border-b border-[#1f1f1f]">
             <p className="text-[12px] text-[#555]">Portfolio constituents — {funds.length} funds</p>
@@ -195,75 +181,54 @@ export default function PortfolioViewerPage() {
               <tfoot>
                 <tr className="bg-[#0d0d0d]">
                   <td colSpan={5} className="px-4 py-2.5 text-[11px] text-[#444]">Portfolio total</td>
-                  <td className="px-4 py-2.5 text-[11px] text-[#f0f0f0] font-semibold">
-                    {funds.reduce((a, f) => a + f.targetWeight, 0).toFixed(1)}%
-                  </td>
-                  <td className="px-4 py-2.5 text-[11px] text-[#f0f0f0] font-semibold">
-                    {formatINR(funds.reduce((a, f) => a + f.allocation, 0))}
-                  </td>
-                  <td className="px-4 py-2.5 text-[11px] text-[#22c55e]">
-                    {(strategy.weightedCAGR3y ?? 0).toFixed(1)}%
-                  </td>
-                  <td className="px-4 py-2.5 text-[11px] text-[#818cf8]">
-                    {(strategy.weightedSharpe3y ?? 0).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-2.5 text-[11px] text-[#555]">
-                    {(strategy.weightedExpenseRatio ?? 0).toFixed(2)}%
-                  </td>
+                  <td className="px-4 py-2.5 text-[11px] text-[#f0f0f0] font-semibold">{funds.reduce((a, f) => a + f.targetWeight, 0).toFixed(1)}%</td>
+                  <td className="px-4 py-2.5 text-[11px] text-[#f0f0f0] font-semibold">{formatINR(funds.reduce((a, f) => a + f.allocation, 0))}</td>
+                  <td className="px-4 py-2.5 text-[11px] text-[#22c55e]">{(strategy.weightedCAGR3y ?? 0).toFixed(1)}%</td>
+                  <td className="px-4 py-2.5 text-[11px] text-[#818cf8]">{(strategy.weightedSharpe3y ?? 0).toFixed(2)}</td>
+                  <td className="px-4 py-2.5 text-[11px] text-[#555]">{(strategy.weightedExpenseRatio ?? 0).toFixed(2)}%</td>
                 </tr>
               </tfoot>
             </table>
           </div>
         </div>
 
-        {/* Strategy config + Diagnostics */}
         <div className="grid grid-cols-2 gap-4">
-          {/* Config summary */}
           <div className="p-4 rounded-xl border border-[#2a2a2a] bg-[#111]">
             <p className="text-[12px] text-[#888] font-medium mb-3">Strategy Configuration</p>
             <div className="space-y-2">
               <ConfigTag label="Weighting" value={weightingLabel(strategy.config.weighting.method)} />
               <ConfigTag label="Rebalancing" value={rebalancingLabel(strategy)} />
               <ConfigTag label="Filters" value={`${strategy.config.filters.length} conditions`} />
-              <ConfigTag label="Ranking factors" value={
-                strategy.config.rankingFactors.length === 0
-                  ? 'None (alphabetical)'
-                  : strategy.config.rankingFactors.map(f => f.metricLabel).join(', ')
-              } />
+              <ConfigTag label="Ranking factors" value={strategy.config.rankingFactors.length === 0 ? 'None (alphabetical)' : strategy.config.rankingFactors.map(f => f.metricLabel).join(', ')} />
               <ConfigTag label="Top N" value={`${strategy.topN ?? funds.length} funds selected`} />
               <ConfigTag label="Last run" value={new Date(strategy.lastRunAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} />
             </div>
           </div>
 
-          {/* Section breakdown */}
           <div className="p-4 rounded-xl border border-[#2a2a2a] bg-[#111]">
             <p className="text-[12px] text-[#888] font-medium mb-3">Section Breakdown</p>
             {sections.map(section => {
-              const sectionFunds = funds.filter(f => f.section === section)
-              const sectionWeight = sectionFunds.reduce((a, f) => a + f.targetWeight, 0)
-              const sectionAlloc = sectionFunds.reduce((a, f) => a + f.allocation, 0)
+              const sf = funds.filter(f => f.section === section)
+              const sw = sf.reduce((a, f) => a + f.targetWeight, 0)
+              const sa = sf.reduce((a, f) => a + f.allocation, 0)
               return (
                 <div key={section} className="mb-3">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <SectionBadge section={section} />
-                      <span className="text-[11px] text-[#555]">{sectionFunds.length} funds</span>
+                      <span className="text-[11px] text-[#555]">{sf.length} funds</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[11px] text-[#f0f0f0]">{sectionWeight.toFixed(1)}%</span>
-                      <span className="text-[11px] text-[#555]">{formatINR(sectionAlloc)}</span>
+                      <span className="text-[11px] text-[#f0f0f0]">{sw.toFixed(1)}%</span>
+                      <span className="text-[11px] text-[#555]">{formatINR(sa)}</span>
                     </div>
                   </div>
                   <div className="h-1.5 rounded-full bg-[#1a1a1a] overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${sectionWeight}%`, background: SECTION_COLOR[section] }}
-                    />
+                    <div className="h-full rounded-full" style={{ width: `${sw}%`, background: SECTION_COLOR[section] }} />
                   </div>
                 </div>
               )
             })}
-
             <div className="mt-4 pt-3 border-t border-[#1a1a1a]">
               <p className="text-[11px] text-[#444] mb-2">Top holdings by weight</p>
               {[...funds].sort((a, b) => b.targetWeight - a.targetWeight).slice(0, 3).map((f, i) => (
@@ -279,14 +244,10 @@ export default function PortfolioViewerPage() {
           </div>
         </div>
 
-        {/* Delete / danger zone */}
         <div className="mt-6 pt-4 border-t border-[#1a1a1a] flex items-center justify-between">
           <p className="text-[11px] text-[#333]">Strategy ID: {strategy.id}</p>
           <button
-            onClick={() => {
-              deleteStrategy(strategy.id)
-              router.push('/strategies')
-            }}
+            onClick={() => { deleteStrategy(strategy.id); router.push('/strategies') }}
             className="text-[12px] text-[#ef4444] hover:text-[#dc2626] cursor-pointer transition-colors"
           >
             Delete strategy
