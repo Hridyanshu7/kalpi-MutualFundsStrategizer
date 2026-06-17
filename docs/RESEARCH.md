@@ -414,162 +414,333 @@ Target weights translate to rupee allocations. The weighting method is chosen in
 
 ## 3. Key Challenges & Corner Cases
 
-### Fund Overlap
-**The problem:** A user selects 8 funds believing they are well-diversified. In reality, every fund in the basket holds HDFC Bank, Reliance, and Infosys at >5% weight — they have effectively bought the same 30 stocks eight times over. Diversification across fund names provides no actual risk reduction.
+<div class="cc-container">
+<div class="cc-tabs">
+<button class="cc-tab active" data-case="overlap">Fund Overlap</button>
+<button class="cc-tab" data-case="amc">AMC Concentration</button>
+<button class="cc-tab" data-case="cat">Category Concentration</button>
+<button class="cc-tab" data-case="drift">Style Drift</button>
+<button class="cc-tab" data-case="survivor">Survivorship Bias</button>
+<button class="cc-tab" data-case="merger">Fund Mergers</button>
+<button class="cc-tab" data-case="nfund">New Funds / NFOs</button>
+<button class="cc-tab" data-case="missing">Missing Data</button>
+<button class="cc-tab" data-case="exit">Exit Loads</button>
+<button class="cc-tab" data-case="tax">Tax Implications</button>
+</div>
 
-**Why it happens:** Return-chasing selection naturally converges on the same high-performing large-caps. Flexi Cap, Large Cap, and Aggressive Hybrid funds in particular overlap heavily during bull markets.
+<div class="cc-panel active" id="cc-overlap">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat conc">Concentration</span><span class="cc-title">Fund Overlap</span><span class="cc-impact high">High Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body">8 funds, same 30 stocks — Flexi Cap, Large Cap, and Hybrid funds all converge on HDFC Bank, Reliance, and Infosys at &gt;5% weight. Diversification across fund <em>names</em> provides no actual risk reduction.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Any 2 funds in basket share <strong>&gt;60% of their top holdings</strong></div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge impl">Prototype</span> Warn, don't block — user may intentionally concentrate; surface the data and let them proceed</li>
+<li><span class="badge assume">Assumption</span> Flag overlapping pair: <em>"Fund A &amp; Fund B share 68% of their top holdings"</em></li>
+<li><span class="badge impl">Prototype</span> Surface repeated stocks: <em>"HDFC Bank appears in 6 of your 8 funds"</em></li>
+<li>Future: portfolio-level stock heatmap showing true underlying exposure</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Holdings Overlap Matrix — hypothetical 5-fund basket</div>
+<table class="ov-matrix">
+<thead><tr><th></th><th>Fund A</th><th>Fund B</th><th>Fund C</th><th>Fund D</th><th>Fund E</th></tr></thead>
+<tbody>
+<tr><td><strong>Fund A</strong></td><td class="ov-na">—</td><td class="ov-high">72%</td><td class="ov-med">45%</td><td class="ov-low">20%</td><td class="ov-low">12%</td></tr>
+<tr><td><strong>Fund B</strong></td><td class="ov-high">72%</td><td class="ov-na">—</td><td class="ov-high">68%</td><td class="ov-med">35%</td><td class="ov-low">18%</td></tr>
+<tr><td><strong>Fund C</strong></td><td class="ov-med">45%</td><td class="ov-high">68%</td><td class="ov-na">—</td><td class="ov-med">52%</td><td class="ov-low">28%</td></tr>
+<tr><td><strong>Fund D</strong></td><td class="ov-low">20%</td><td class="ov-med">35%</td><td class="ov-med">52%</td><td class="ov-na">—</td><td class="ov-med">41%</td></tr>
+<tr><td><strong>Fund E</strong></td><td class="ov-low">12%</td><td class="ov-low">18%</td><td class="ov-low">28%</td><td class="ov-med">41%</td><td class="ov-na">—</td></tr>
+</tbody>
+</table>
+<div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;font-size:10px;color:#aaa;">
+<span><span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:2px;font-weight:700;font-size:9.5px;">&gt;60%</span> Flagged</span>
+<span><span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:2px;font-weight:700;font-size:9.5px;">30–60%</span> Watch</span>
+<span><span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:2px;font-weight:700;font-size:9.5px;">&lt;30%</span> OK</span>
+</div>
+</div>
+</div>
+</div>
 
-**Kalpi's response:**
-- Detect overlap at construction time by comparing top holdings across selected funds
-- <span class="badge assume">Assumption</span> Flag pairs with >60% holdings overlap: "Fund A and Fund B share 68% of their top holdings"
-- Surface the most repeated underlying stocks: "HDFC Bank appears in 6 of your 8 funds"
-- <span class="badge impl">Prototype</span> Warn, don't block — a user may intentionally concentrate; inform them clearly and let them proceed
-- Future: show a portfolio-level stock heatmap so users can visually see the true underlying diversification
+<div class="cc-panel" id="cc-amc">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat conc">Concentration</span><span class="cc-title">AMC Concentration</span><span class="cc-impact high">High Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body">Scoring rewards consistent performers — model may pick 4–5 funds from a single AMC. AMC-level risk (regulatory sanction, fund manager exodus, compliance failure) hits <em>all</em> of that house's funds simultaneously.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Single AMC represents <strong>&gt;25% of basket's total allocation</strong></div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge assume">Assumption</span> Flag: <em>"3 of your 8 funds are from HDFC AMC, representing 42% of capital"</em></li>
+<li><span class="badge assume">Assumption</span> Offer soft construction constraint: max 2 funds per AMC applied at build time</li>
+<li>User can override with explicit acknowledgement — strong AMC conviction is a valid reason</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">AMC Distribution — hypothetical 8-fund basket</div>
+<div class="amc-bars">
+<div class="amc-row"><div class="amc-label">HDFC AMC</div><div class="amc-bar-wrap"><div class="amc-bar-fill" style="width:42%;background:#c0392b;">42%</div></div><span class="amc-flag">⚑ &gt;25% flagged</span></div>
+<div class="amc-row"><div class="amc-label">SBI MF</div><div class="amc-bar-wrap"><div class="amc-bar-fill" style="width:28%;background:#c0392b;">28%</div></div><span class="amc-flag">⚑ &gt;25% flagged</span></div>
+<div class="amc-row"><div class="amc-label">Axis MF</div><div class="amc-bar-wrap"><div class="amc-bar-fill" style="width:14%;background:#6366f1;">14%</div></div><span style="font-size:9px;color:#aaa;">OK</span></div>
+<div class="amc-row"><div class="amc-label">Kotak MF</div><div class="amc-bar-wrap"><div class="amc-bar-fill" style="width:10%;background:#888;">10%</div></div><span style="font-size:9px;color:#aaa;">OK</span></div>
+<div class="amc-row"><div class="amc-label">UTI MF</div><div class="amc-bar-wrap"><div class="amc-bar-fill" style="width:6%;background:#aaa;">6%</div></div><span style="font-size:9px;color:#aaa;">OK</span></div>
+</div>
+</div>
+</div>
+</div>
 
----
+<div class="cc-panel" id="cc-cat">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat conc">Concentration</span><span class="cc-title">Category Concentration</span><span class="cc-impact med">Med Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body">In 2021, Small Cap funds dominated 3Y CAGR rankings. A return-heavy scoring model applied to a multi-universe basket fills most Top-N slots from one sub-category — defeating the intent of selecting multiple universes.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body"><strong>&gt;50% of Top-N funds</strong> come from a single sub-universe</div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge assume">Assumption</span> Warn before carrying to portfolio: <em>"7 of 10 selected funds are Flexi Cap"</em></li>
+<li>Allow manual pinning of a fund from any underrepresented universe</li>
+<li>Future: universe-proportionate mode — guarantees ≥1 fund per selected sub-category in final basket</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Top-10 selection — sub-universe distribution (7/10 Flexi Cap, flagged)</div>
+<div class="universe-strip">
+<div class="us-block" style="flex:7;background:#c0392b;">Flexi Cap — 7</div>
+<div class="us-block" style="flex:2;background:#6366f1;">Large Cap — 2</div>
+<div class="us-block" style="flex:1;background:#888;font-size:8.5px;">SC — 1</div>
+</div>
+<div class="us-legend">
+<span><i class="us-dot" style="background:#c0392b;"></i> Flexi Cap — 7 funds <strong style="color:#991b1b;">(⚑ flagged: &gt;50%)</strong></span>
+<span><i class="us-dot" style="background:#6366f1;"></i> Large Cap — 2 funds</span>
+<span><i class="us-dot" style="background:#888;"></i> Small Cap — 1 fund</span>
+</div>
+</div>
+</div>
+</div>
 
-### AMC Concentration
-**The problem:** A scoring model that rewards consistent performance may end up selecting 4–5 funds from a single fund house — say, HDFC AMC or SBI Funds. The user believes they have a diversified basket; they actually have a concentrated bet on one AMC's operational health, leadership, and compliance culture.
+<div class="cc-panel" id="cc-drift">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat data">Data Quality</span><span class="cc-title">Style Drift</span><span class="cc-impact med">Med Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body">Fund mandates are declared; actual behaviour diverges. Several Flexi Cap funds post-2020 held &gt;80% large-cap for extended periods — users got duplicate large-cap exposure inside a "diversified" basket without being warned.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Fund's actual large-cap % exceeds <strong>80% for any rolling 6-month window</strong></div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li>Monitor actual large/mid/small cap % per fund over rolling 6M windows</li>
+<li><span class="badge assume">Assumption</span> Flag in diagnostics: <em>"Fund X is Flexi Cap but held &gt;80% large-cap for 6 months"</em></li>
+<li>Quarterly strategy re-runs surface this naturally — a drifted fund scores differently on composition-aware metrics</li>
+<li>Future: automated drift alerts triggered by composition thresholds between scheduled re-runs</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Flexi Cap Fund — rolling large-cap allocation (6M window)</div>
+<div style="position:relative;height:80px;display:flex;gap:6px;align-items:flex-end;border-bottom:1px solid #e5e5e5;margin-bottom:4px;">
+<div style="flex:1;height:52px;background:#6366f1;border-radius:2px 2px 0 0;opacity:.75;" title="Jan: 65%"></div>
+<div style="flex:1;height:57px;background:#6366f1;border-radius:2px 2px 0 0;opacity:.85;" title="Feb: 71%"></div>
+<div style="flex:1;height:61px;background:#ea580c;border-radius:2px 2px 0 0;" title="Mar: 76%"></div>
+<div style="flex:1;height:66px;background:#c0392b;border-radius:2px 2px 0 0;" title="Apr: 82%"></div>
+<div style="flex:1;height:68px;background:#c0392b;border-radius:2px 2px 0 0;" title="May: 85%"></div>
+<div style="flex:1;height:70px;background:#c0392b;border-radius:2px 2px 0 0;" title="Jun: 88%"></div>
+<div style="position:absolute;left:0;right:0;bottom:64px;border-top:1.5px dashed #c0392b;pointer-events:none;z-index:1;"><span style="position:absolute;right:0;bottom:2px;font-size:9px;color:#c0392b;font-weight:700;white-space:nowrap;">← 80% mandate boundary</span></div>
+</div>
+<div style="display:flex;gap:6px;margin-bottom:8px;">
+<div style="flex:1;text-align:center;font-size:9.5px;color:#6366f1;font-weight:700;">Jan<br>65%</div>
+<div style="flex:1;text-align:center;font-size:9.5px;color:#6366f1;font-weight:700;">Feb<br>71%</div>
+<div style="flex:1;text-align:center;font-size:9.5px;color:#ea580c;font-weight:700;">Mar<br>76%</div>
+<div style="flex:1;text-align:center;font-size:9.5px;color:#c0392b;font-weight:700;">Apr<br>82%</div>
+<div style="flex:1;text-align:center;font-size:9.5px;color:#c0392b;font-weight:700;">May<br>85%</div>
+<div style="flex:1;text-align:center;font-size:9.5px;color:#c0392b;font-weight:700;">Jun<br>88%</div>
+</div>
+<div style="font-size:10px;color:#c0392b;font-weight:600;">⚑ Flagged: large-cap % crossed 80% for 3 consecutive months — fund is Flexi Cap by mandate, Large Cap by behaviour</div>
+</div>
+</div>
+</div>
 
-**Why it matters:** AMC-level risk is distinct from fund-level risk. A regulatory sanction, a key fund manager exodus, or a compliance failure at the AMC level can affect all its funds simultaneously.
+<div class="cc-panel" id="cc-survivor">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat data">Data Quality</span><span class="cc-title">Survivorship Bias</span><span class="cc-impact med">Med Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body">Any backtest only evaluates funds that exist today. Wound-up funds — typically poor performers or mismanaged — are invisible. A "15% CAGR strategy" is measured against survivors only; it never faced funds that got shut down during the period.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Any historical performance display, backtest, or strategy comparison across a time period</div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge impl">Prototype</span> Explicit disclaimer on all historical views: <em>"Excludes wound-up/merged funds; actual returns may be lower"</em></li>
+<li>Tag funds in the data layer that absorbed a merger — pre-merger track record belongs to a different entity</li>
+<li>For live strategies, less relevant — strategy runs on currently-existing funds; disclaimer still shown on any historical comparison</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Illustrative: Indian MF universe tracked from 2019</div>
+<div style="display:flex;height:28px;border-radius:4px;overflow:hidden;margin-bottom:8px;">
+<div style="flex:72;background:#15803d;display:flex;align-items:center;padding-left:10px;font-size:9.5px;font-weight:700;color:white;">Surviving today — 612 funds (72.3%)</div>
+<div style="flex:28;background:#fee2e2;border-left:2px solid #c0392b;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#991b1b;">Wound up — 235 (27.8%)</div>
+</div>
+<div style="font-size:10.5px;color:#777;line-height:1.6;">Starting pool: <strong>847 funds</strong> tracked from 2019. Backtests only see the <span style="color:#15803d;font-weight:700;">612 survivors</span> — the <span style="color:#991b1b;font-weight:700;">235 wound-up funds</span> are invisible, systematically inflating apparent strategy returns.</div>
+</div>
+</div>
+</div>
 
-**Kalpi's response:**
-- <span class="badge assume">Assumption</span> Flag when any single AMC represents >25% of the basket's total allocation
-- Surface as a diagnostic: "3 of your 8 funds are from HDFC AMC, representing 42% of capital"
-- <span class="badge assume">Assumption</span> Allow a soft constraint at construction time: "max 2 funds per AMC" — applies before final selection
-- Do not enforce automatically; a user with strong conviction on an AMC's quality should be able to override with explicit acknowledgement
+<div class="cc-panel" id="cc-merger">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat reg">Regulatory</span><span class="cc-title">Fund Mergers</span><span class="cc-impact med">Med Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body"><span class="badge reg">Regulatory</span> SEBI's 2018 rationalisation directive forced AMCs to merge overlapping funds. Many "5Y returns" today are stitched from two entities with different mandates, managers, and AUM profiles — not a continuous comparable number.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Fund underwent a merger or reclassification in the <strong>last 5 years</strong></div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge impl">Prototype</span> Tag fund with "Post-merger track record" label wherever historical metrics are shown</li>
+<li><span class="badge assume">Assumption</span> Downweight or exclude 5Y CAGR and inception return for merged funds — rely on shorter windows where current mandate is intact</li>
+<li>Surface merger context in fund detail view before user assigns high weight to long-term metrics</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Example: Corporate Bond Fund — stitched track record</div>
+<div class="mt-strip">
+<div class="mt-box mt-before"><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#1d4ed8;letter-spacing:.08em;margin-bottom:4px;">2015 → 2018</div><div style="font-size:12px;font-weight:700;">Short Duration Fund</div><div style="font-size:10px;color:#888;margin-top:3px;">Different mandate · Different manager · Shorter duration target</div></div>
+<div class="mt-arrow">→</div>
+<div class="mt-box mt-event"><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#c2410c;letter-spacing:.08em;margin-bottom:4px;">SEBI 2018</div><div style="font-size:11px;font-weight:700;">Rationalisation<br>Directive</div><div style="font-size:10px;color:#888;margin-top:3px;">Forced merger</div></div>
+<div class="mt-arrow">→</div>
+<div class="mt-box mt-after"><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#15803d;letter-spacing:.08em;margin-bottom:4px;">2018 → Today</div><div style="font-size:12px;font-weight:700;">Corporate Bond Fund</div><div style="font-size:10px;color:#888;margin-top:3px;">Current mandate · New manager · Longer duration</div></div>
+</div>
+<div style="margin-top:8px;font-size:10.5px;color:#c0392b;font-weight:600;">⚑ The 5Y return includes the Short Duration period — comparing it to a pure-play Corporate Bond fund with a clean 5Y history is misleading</div>
+</div>
+</div>
+</div>
 
----
+<div class="cc-panel" id="cc-nfund">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat data">Data Quality</span><span class="cc-title">New Funds / NFOs</span><span class="cc-impact low">Low Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body">NFOs and post-2018 reclassified funds have &lt;3Y of data. Percentile ranking on partial data is unreliable — funds score artificially high (strong recent data, small sample) or low (gaps in multi-year metrics).</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Fund age <strong>&lt; 3 years</strong> when any multi-year metric is included in ranking</div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge impl">Prototype</span> Default Fund Age ≥ 3Y filter eliminates most NFOs from the eligible pool</li>
+<li><span class="badge impl">Prototype</span> If filter is removed: warn <em>"X funds have &lt;3Y data; their 3Y/5Y rankings are unreliable"</em></li>
+<li><span class="badge impl">Prototype</span> Never impute missing long-term metrics — exclude fund from that metric's percentile computation and proportionally reweight remaining metrics</li>
+<li>Future: dedicated "Emerging Funds" view evaluating NFOs only on metrics they have sufficient data for</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Metric availability by fund age</div>
+<table class="cov-matrix">
+<thead><tr><th>Fund age</th><th>1Y CAGR</th><th>3Y CAGR</th><th>5Y CAGR</th><th>Sharpe 3Y</th><th>Alpha 5Y</th><th>Expense R.</th><th>AUM</th></tr></thead>
+<tbody>
+<tr><td>&lt; 1 year</td><td><span class="cov-p">Partial</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td></tr>
+<tr><td>1 – 2 years</td><td><span class="cov-y">✓</span></td><td><span class="cov-p">Partial</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td></tr>
+<tr><td>2 – 3 years</td><td><span class="cov-y">✓</span></td><td><span class="cov-p">Partial</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-p">Partial</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td></tr>
+<tr><td>3 – 5 years</td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-p">Partial</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-n">Missing</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td></tr>
+<tr><td>&gt; 5 years</td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td><td><span class="cov-y">✓</span></td></tr>
+</tbody>
+</table>
+<div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:#aaa;flex-wrap:wrap;">
+<span><span class="cov-y">✓</span> Full data</span>
+<span><span class="cov-p">Partial</span> Incomplete window</span>
+<span><span class="cov-n">Missing</span> Excluded from ranking</span>
+</div>
+</div>
+</div>
+</div>
 
-### Category Concentration
-**The problem:** Even when a user selects multiple universes (e.g., Large Cap + Flexi Cap + Multi Cap), the composite score may rank all top-N funds from one sub-category — because that category happened to perform best during the metric window being used.
+<div class="cc-panel" id="cc-missing">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat data">Data Quality</span><span class="cc-title">Missing Data</span><span class="cc-impact med">Med Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body">Imputing zero → unfair penalty. Imputing pool mean → masks unknown quality. Excluding the fund entirely → wastes a valid candidate. All three naive approaches fail differently depending on the metric and fund type.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Any metric value is <strong>null, stale (&gt;2 months old), or not applicable</strong> for a fund in the ranked pool</div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge impl">Prototype</span> Exclude fund from that metric's percentile computation only; redistribute weight proportionally to remaining metrics</li>
+<li><span class="badge impl">Prototype</span> Surface gaps: <em>"3 funds scored on 4 of 5 metrics — Sharpe 3Y unavailable for these funds"</em></li>
+<li><span class="badge assume">Assumption</span> Warn if &gt;30% of pool is missing a metric: <em>"This metric has low coverage — consider removing it"</em></li>
+<li><span class="badge assume">Assumption</span> Flag data older than 2 months as stale in all fund detail views</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Data coverage — 5-fund sample pool across 7 metrics</div>
+<table class="data-grid">
+<thead><tr><th>Fund</th><th>3Y CAGR</th><th>5Y CAGR</th><th>Sharpe</th><th>Alpha</th><th>YTM</th><th>Mod Dur</th><th>AAA%</th></tr></thead>
+<tbody>
+<tr><td>Fund A (Equity)</td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-stale">⚠ stale</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-na">—</span></td><td><span class="dg-na">—</span></td><td><span class="dg-na">—</span></td></tr>
+<tr><td>Fund B (Equity)</td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-miss">✗</span></td><td><span class="dg-na">—</span></td><td><span class="dg-na">—</span></td><td><span class="dg-na">—</span></td></tr>
+<tr><td>Fund C (Debt)</td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td></tr>
+<tr><td>Fund D (Hybrid)</td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-miss">✗</span></td></tr>
+<tr><td>Fund E (Debt)</td><td><span class="dg-ok">✓</span></td><td><span class="dg-miss">✗</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td><td><span class="dg-ok">✓</span></td></tr>
+</tbody>
+</table>
+<div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:#aaa;flex-wrap:wrap;">
+<span><span class="dg-ok">✓</span> Available</span>
+<span><span class="dg-stale">⚠ stale</span> &gt;2 months</span>
+<span><span class="dg-miss">✗</span> Missing</span>
+<span><span class="dg-na" style="color:#bbb;font-size:10px;">—</span> Not applicable</span>
+</div>
+</div>
+</div>
+</div>
 
-**Real example:** In 2021, Small Cap funds dominated 3Y CAGR rankings. A return-heavy scoring model applied to a basket that also includes Large Cap would fill most slots with Small Cap funds, defeating the intent of the multi-universe selection.
+<div class="cc-panel" id="cc-exit">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat reg">Regulatory</span><span class="cc-title">Exit Loads</span><span class="cc-impact high">High Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body"><span class="badge reg">Regulatory</span> Rebalancing sell triggers a 1% exit load if the fund is within its 12-month window. A drift correction that frees ₹80 of value but triggers ₹100 in exit load is a net loss — not a gain.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Fund is a sell candidate during rebalancing and is <strong>within its exit load window</strong> at time of order</div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge impl">Prototype</span> Show exit load status per fund in portfolio view — load %, rupee amount, and days until window closes</li>
+<li><span class="badge impl">Prototype</span> Before rebalancing confirmation: show exit load cost per sell and net benefit after load</li>
+<li><span class="badge impl">Prototype</span> If load cost &gt; drift benefit: <em>"Selling Fund X now costs ₹420 in exit load; drift within tolerance — skip this cycle"</em></li>
+<li><span class="badge assume">Assumption</span> Recommend quarterly+ rebalancing cadence for equity-heavy strategies to stay clear of load windows</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Exit load window by fund type (bar width = load-active period; scale = 12 months)</div>
+<div class="el-timeline">
+<div class="el-row"><div class="el-fund">Equity<br>(Large/Flexi/Multi)</div><div class="el-track"><div class="el-load" style="width:100%;background:#c0392b;">1% · 12 months</div></div><div class="el-rate">1%</div></div>
+<div class="el-row"><div class="el-fund">Aggressive Hybrid</div><div class="el-track"><div class="el-load" style="width:100%;background:#c0392b;">1% · 12 months</div></div><div class="el-rate">1%</div></div>
+<div class="el-row"><div class="el-fund">Bal. Adv. / DAA</div><div class="el-track"><div class="el-load" style="width:100%;background:#c0392b;">1% · 12 months</div></div><div class="el-rate">1%</div></div>
+<div class="el-row"><div class="el-fund">Corporate Bond</div><div class="el-track"><div class="el-load" style="width:50%;background:#ea580c;">0.5% · up to 6M</div></div><div class="el-rate">0.5%</div></div>
+<div class="el-row"><div class="el-fund">Short Duration</div><div class="el-track"><div style="height:100%;background:#dcfce7;display:flex;align-items:center;padding-left:8px;font-size:9.5px;color:#15803d;font-weight:700;">No load</div></div><div class="el-rate" style="color:#15803d;">0%</div></div>
+<div class="el-row"><div class="el-fund">Liquid / Overnight</div><div class="el-track"><div style="height:100%;background:#dcfce7;display:flex;align-items:center;padding-left:8px;font-size:9.5px;color:#15803d;font-weight:700;">No load</div></div><div class="el-rate" style="color:#15803d;">0%</div></div>
+</div>
+</div>
+</div>
+</div>
 
-**Kalpi's response:**
-- <span class="badge assume">Assumption</span> Warn when >50% of the selected Top N funds come from a single sub-universe
-- Make the imbalance visible before the user carries funds to the portfolio: "7 of 10 selected funds are Flexi Cap"
-- Future: offer a "universe-proportionate" mode that guarantees at least one fund per selected universe in the final basket
-- Let the user manually pin a fund from an underrepresented universe if they want explicit coverage
+<div class="cc-panel" id="cc-tax">
+<div class="cc-card">
+<div class="cc-card-header"><span class="cc-cat reg">Regulatory</span><span class="cc-title">Tax Implications</span><span class="cc-impact high">High Impact</span></div>
+<div class="cc-rows">
+<div class="cc-row"><div class="cc-row-label">Problem</div><div class="cc-row-body">Selling 1 day early (day 364 vs. day 366) costs 7.5 percentage points of tax on the gain. Post-Budget 2024: equity STCG 20%, LTCG 12.5% on gains above ₹1.25L. Post-2023: debt MFs taxed at slab rate regardless of holding period — no longer tax-efficient for 30% bracket investors.</div></div>
+<div class="cc-row"><div class="cc-row-label">Trigger</div><div class="cc-row-body">Any sell order — <strong>every MF redemption has a tax consequence</strong> determined by fund type, holding period, and user's income slab</div></div>
+<div class="cc-row"><div class="cc-row-label">Response</div><div class="cc-row-body"><ul>
+<li><span class="badge impl">Prototype</span> Show STCG / LTCG estimate per fund before any rebalancing order is confirmed</li>
+<li><span class="badge impl">Prototype</span> Flag funds approaching the 12-month mark: <em>"Hold 23 more days for LTCG rate — saves an estimated ₹1,200"</em></li>
+<li><span class="badge impl">Prototype</span> For debt holdings at 30% slab: <em>"This fund is taxed identically to an FD — consider an arbitrage fund"</em></li>
+<li><span class="badge reg">Regulatory</span> No wash-sale rule in India — selling at a loss and immediately repurchasing is legal. Tax-loss harvesting is clean; losses carry forward 8 years</li>
+<li>Future: tax-optimised rebalancing mode — sequences sells to minimise current FY tax outflow (LTCG lots first, harvest losses before March)</li>
+</ul></div></div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Worked example — same ₹2,00,000 gain, 3 scenarios (post-Budget 2024)</div>
+<table style="border-collapse:collapse;font-size:12px;width:100%;margin-bottom:14px;">
+<thead>
+<tr>
+<th style="padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;background:#f9f9f9;border-bottom:2px solid #e5e5e5;text-align:left;"></th>
+<th style="padding:7px 10px;font-size:10px;font-weight:700;color:#c2410c;background:#fff7ed;border-bottom:2px solid #fcd8b0;text-align:center;">Equity STCG<br><span style="font-weight:400;color:#bbb;font-size:9px;">Sold at 11 months</span></th>
+<th style="padding:7px 10px;font-size:10px;font-weight:700;color:#15803d;background:#f0fdf4;border-bottom:2px solid #bbf7d0;text-align:center;">Equity LTCG<br><span style="font-weight:400;color:#bbb;font-size:9px;">Sold at 13 months</span></th>
+<th style="padding:7px 10px;font-size:10px;font-weight:700;color:#991b1b;background:#fff1f2;border-bottom:2px solid #fecdd3;text-align:center;">Debt Fund<br><span style="font-weight:400;color:#bbb;font-size:9px;">Any holding period</span></th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="padding:7px 10px;color:#555;border-bottom:1px solid #f5f5f5;font-weight:600;">Capital gain</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#555;">₹2,00,000</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#555;background:#f0fdf4;">₹2,00,000</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#555;">₹2,00,000</td></tr>
+<tr><td style="padding:7px 10px;color:#555;border-bottom:1px solid #f5f5f5;font-weight:600;">LTCG exempt</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#bbb;">—</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#555;background:#f0fdf4;">₹1,25,000</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#bbb;">—</td></tr>
+<tr><td style="padding:7px 10px;color:#555;border-bottom:1px solid #f5f5f5;font-weight:600;">Taxable</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#555;">₹2,00,000</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#555;background:#f0fdf4;">₹75,000</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;color:#555;">₹2,00,000</td></tr>
+<tr><td style="padding:7px 10px;color:#555;border-bottom:1px solid #f5f5f5;font-weight:600;">Rate</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;font-weight:700;color:#c0392b;">20% STCG</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;font-weight:700;color:#15803d;background:#f0fdf4;">12.5% LTCG</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f5f5f5;font-weight:700;color:#991b1b;">30% slab</td></tr>
+<tr><td style="padding:7px 10px;color:#333;font-weight:700;border-bottom:1px solid #f5f5f5;">Tax owed</td><td style="padding:7px 10px;text-align:center;font-weight:800;font-size:14px;color:#c0392b;border-bottom:1px solid #f5f5f5;">₹40,000</td><td style="padding:7px 10px;text-align:center;font-weight:800;font-size:14px;color:#15803d;border-bottom:1px solid #f5f5f5;background:#f0fdf4;">₹9,375</td><td style="padding:7px 10px;text-align:center;font-weight:800;font-size:14px;color:#991b1b;border-bottom:1px solid #f5f5f5;">₹60,000</td></tr>
+<tr><td style="padding:7px 10px;color:#555;font-weight:600;">vs. STCG</td><td style="padding:7px 10px;text-align:center;color:#bbb;">—</td><td style="padding:7px 10px;text-align:center;font-weight:700;color:#15803d;background:#f0fdf4;">saves ₹30,625</td><td style="padding:7px 10px;text-align:center;font-weight:700;color:#991b1b;">costs ₹20,000 more</td></tr>
+</tbody>
+</table>
+<div style="font-size:10.5px;color:#666;line-height:1.7;">
+<span class="badge reg">Regulatory</span> <strong>Debt fund tax shift (2023):</strong> Indexation benefit removed. Debt MFs taxed at slab rate regardless of holding period — no more tax-efficiency advantage over FDs for 30% bracket investors. Arbitrage funds (equity-taxed, FD-like returns) are often a better alternative.<br>
+<span class="badge reg">Regulatory</span> <strong>LTCG exemption:</strong> First ₹1.25L of equity LTCG per financial year is exempt. Relevant for portfolio sizing and staggered redemption planning.<br>
+<span class="badge reg">Regulatory</span> <strong>No wash-sale rule:</strong> India does not prohibit selling a fund at a loss and immediately repurchasing. Tax-loss harvesting is clean — losses offset gains elsewhere or carry forward 8 years.
+</div>
+</div>
+</div>
+</div>
 
----
-
-### Style Drift
-**The problem:** Fund mandates are declared; actual portfolio behaviour can diverge over time. A Flexi Cap fund manager who gradually shifts toward large-caps is not violating any rule — but the user who selected the fund for mid/small-cap exposure is getting something different from what they intended.
-
-**Real example:** Several Flexi Cap funds post-2020 maintained 80%+ large-cap allocation for extended periods, effectively behaving as Large Cap funds without re-classifying. Users holding these in a "diversified" basket had duplicate large-cap exposure.
-
-**Kalpi's response:**
-- Monitor actual portfolio composition metrics (large cap %, mid cap %, small cap %) per fund over rolling 6-month windows
-- <span class="badge assume">Assumption</span> Flag in portfolio diagnostics: "Fund X is classified as Flexi Cap but has held >80% large-cap allocation for the last 6 months"
-- Quarterly strategy re-runs naturally surface this — if the user has a "large cap %" filter or ranking factor, a drifted fund will score differently on the latest data
-- In a future state: automated drift alerts triggered by composition thresholds, not just periodic re-runs
-
----
-
-### Survivorship Bias
-**The problem:** Any analysis of historical MF performance — including backtests — only evaluates funds that exist today. Funds that were wound up or merged, typically because of poor performance or mismanagement, are invisible. This systematically inflates the apparent historical returns of any strategy.
-
-**Why it's insidious:** A backtest showing "this strategy returned 15% CAGR over 10 years" is likely overstated because it never encountered any of the funds that were shut down during that period. The strategy looks better than it would have performed in practice.
-
-**Kalpi's response:**
-- <span class="badge impl">Prototype</span> Acknowledge this limitation explicitly wherever historical performance is shown: "Backtest results exclude funds that were wound up or merged during the period; actual returns may be lower"
-- Tag funds in the data layer that have absorbed a merger — the track record pre-merger belongs to a different entity
-- For live strategies, survivorship bias is less relevant — the strategy runs on currently existing funds; but any "strategy comparison" over historical periods must carry this caveat prominently
-
----
-
-### Fund Mergers
-**The problem:** <span class="badge reg">Regulatory</span> SEBI's 2018 mutual fund rationalisation directive forced AMCs to merge overlapping funds within the same category. As a result, many funds today carry a track record that is stitched together from two or more different entities — with different mandates, managers, AUM profiles, and investment styles. A "5Y return" on such a fund is not a continuous, comparable number.
-
-**Real example:** Several Corporate Bond funds today absorbed Short Duration funds in 2018. Their 5Y return includes a period when the fund had a shorter duration mandate and a different manager — the comparison to a peer with a clean 5Y history is misleading.
-
-**Kalpi's response:**
-- <span class="badge impl">Prototype</span> Tag funds that underwent a merger in the last 5 years with a visible label: "Post-merger track record"
-- <span class="badge assume">Assumption</span> For these funds, downweight or exclude long-term trailing metrics (5Y CAGR, inception-to-date return) from ranking; rely on shorter windows where the current mandate is intact
-- Surface this in the fund detail view so users understand the data context before assigning high ranking weight to long-term metrics
-
----
-
-### New Funds with Limited History
-**The problem:** NFOs and funds that were recently reclassified under SEBI's categories have fewer than 3 years of data. Applying the standard percentile ranking formula to these funds produces unreliable or misleading scores — they rank either artificially high (on limited strong recent data) or low (due to gaps in multi-year metrics).
-
-**Situations where this appears:**
-- New fund launches (NFOs) from established AMCs trying to plug category gaps
-- Funds reclassified post-2018 that effectively have a new mandate but partial historical data
-- Passively managed ETFs and index funds launched in the last 2 years
-
-**Kalpi's response:**
-- <span class="badge impl">Prototype</span> The default Fund Age ≥ 3 years filter eliminates most of these from the eligible pool
-- <span class="badge impl">Prototype</span> If a user removes the age filter, warn: "X funds in your pool have less than 3 years of data; their 3Y/5Y rankings are unreliable"
-- <span class="badge impl">Prototype</span> Do not impute scores for missing long-term metrics — exclude the fund from those specific metric calculations and score it only on available data with a proportional weight adjustment
-- Future: offer a dedicated "Emerging Funds" view where new funds are evaluated only on metrics they have sufficient data for (1Y rolling return, expense ratio, fund house track record)
-
----
-
-### Missing Data
-**The problem:** Not every metric is available for every fund, and the availability varies by fund type, AMC disclosure quality, and data provider. Debt-specific metrics (YTM, Modified Duration, Credit Quality breakdown) don't apply to equity funds. Some smaller AMCs update portfolio composition quarterly rather than monthly. Applying a ranking formula with missing inputs silently produces wrong scores.
-
-**Why naive handling fails:**
-- Imputing zero for a missing AAA% would score the fund as having zero AAA exposure — unfairly penalising it
-- Imputing the pool mean makes the fund appear average when it's actually unknown — different problem
-- Excluding the fund entirely from the pool wastes a potentially valid candidate
-
-**Kalpi's response:**
-- <span class="badge impl">Prototype</span> For any fund missing a specific ranked metric: exclude it from that metric's percentile computation only; redistribute that metric's weight proportionally to remaining metrics in the composite score
-- <span class="badge impl">Prototype</span> Surface data gaps transparently: "3 funds were scored on 4 of 5 metrics — Sharpe 3Y data was unavailable for these funds"
-- <span class="badge assume">Assumption</span> If >30% of the ranked pool is missing a metric, warn the user: "This metric has low coverage in your selected universe — consider removing it from ranking or choosing a better-covered alternative"
-- <span class="badge assume">Assumption</span> Track data freshness per metric; flag when a fund's holdings data is more than 2 months stale
-
----
-
-### Exit Loads
-**The problem:** Most equity mutual funds charge a 1% exit load if redeemed within 12 months of purchase. Some debt funds charge 0.5% within 3–6 months. Rebalancing without accounting for these loads can silently erode returns — a drift correction that frees up ₹80 of value but triggers ₹100 in exit load is a net loss, not a gain.
-
-**Fund-type reference:** <span class="badge reg">Regulatory</span>
-
-| Fund Type | Typical Exit Load | Window |
-|---|---|---|
-| Equity (Large/Flexi/Multi Cap) | 1% | Within 12 months |
-| Aggressive Hybrid | 1% | Within 12 months |
-| Balanced Advantage / DAA | 1% | Within 12 months |
-| Corporate Bond | 0–0.5% | Within 3–6 months |
-| Short Duration | 0% | Typically nil |
-| Dynamic Bond | 0–1% | Varies by AMC |
-| Liquid / Overnight | 0% | No load |
-
-**Kalpi's response:**
-- <span class="badge impl">Prototype</span> Surface exit load status per fund in the portfolio view — show which funds are within their load window and when they exit it
-- <span class="badge impl">Prototype</span> Before any rebalancing order is confirmed, show the estimated exit load cost per fund being sold and the net benefit after load
-- <span class="badge impl">Prototype</span> If exit load cost exceeds the value of drift correction for a fund, recommend skipping that specific trade: "Selling Fund X now incurs ₹420 in exit load; drift is within tolerance — skip for this cycle"
-- <span class="badge assume">Assumption</span> Recommend quarterly or wider rebalancing cadence for equity-heavy strategies to avoid load windows
-- Future: smart rebalancing that automatically excludes funds within their load window from sell candidates unless drift is severe
-
----
-
-### Tax Implications
-**The problem:** Every MF redemption in India has a tax consequence that depends on fund type, holding period, and the investor's income slab. Getting this wrong — especially the STCG vs LTCG threshold for equity — meaningfully reduces post-tax returns. The 2023 debt fund tax change and 2024 equity LTCG rate change have made this landscape more complex than most investors realise.
-
-**Current tax regime (post-Budget 2024):** <span class="badge reg">Regulatory</span>
-
-| Fund Type | Holding Period | Tax Treatment |
-|---|---|---|
-| Equity (>65% equity) | < 12 months | 20% STCG (flat) |
-| Equity (>65% equity) | ≥ 12 months | 12.5% LTCG on gains above ₹1.25L per FY |
-| Debt (< 35% equity) | Any | Slab rate — up to 30% for highest bracket |
-| Hybrid (35–65% equity) | < 36 months | Slab rate |
-| Hybrid (35–65% equity) | ≥ 36 months | 20% (verify per latest budget) |
-
-**Key nuances:**
-- <span class="badge reg">Regulatory</span> **Debt fund tax shift (2023):** Indexation benefit was removed. Debt MFs are now taxed at slab rate regardless of holding period — making them no more tax-efficient than fixed deposits for investors in the 30% bracket. Arbitrage funds (taxed as equity, FD-like returns) are often a better alternative
-- <span class="badge reg">Regulatory</span> **LTCG exemption:** First ₹1.25L of equity LTCG per financial year is exempt — relevant for portfolio sizing and staggered redemption planning
-- <span class="badge reg">Regulatory</span> **No wash-sale rule:** Unlike the US, India does not prohibit selling a fund at a loss and immediately repurchasing it. Tax-loss harvesting is clean — a loss can offset capital gains elsewhere or be carried forward for 8 years
-
-**Kalpi's response:**
-- <span class="badge impl">Prototype</span> Before any rebalancing, show estimated tax impact per fund: STCG or LTCG, estimated liability at the user's declared tax slab
-- <span class="badge impl">Prototype</span> Flag funds approaching the 12-month mark: "Hold 23 more days to qualify for LTCG rate — saves an estimated ₹1,200"
-- <span class="badge impl">Prototype</span> For debt fund holdings, surface the tax-equivalence note for high-bracket users: "At 30% slab, this Corporate Bond fund is taxed identically to an FD — consider an arbitrage fund for equivalent risk with equity taxation"
-- Future: tax-optimised rebalancing mode that sequences sells to minimise current financial year tax outflow — selling LTCG-eligible lots first, harvesting available losses before year-end
+</div>
 
 ---
 
