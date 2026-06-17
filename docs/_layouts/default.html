@@ -459,7 +459,7 @@
   });
 
   // ── Charts (only if Chart.js loaded) ──
-  if (typeof Chart === 'undefined') return;
+  if (typeof Chart !== 'undefined') {
 
   // Section 1 — competitive positioning scatter
   var compCanvas = document.getElementById('comp-chart');
@@ -540,6 +540,7 @@
       }
     });
   }
+  } // end Chart guard
 </script>
 
 </body>
