@@ -98,35 +98,35 @@ The market splits into three archetypes: **transaction platforms** (Groww, Coin,
 ## 2. Mutual Fund Framework
 
 ### Filtering
-Filters define the floor — they eliminate the ineligible, not identify the best. All filters use AND logic; a fund that fails any single condition is out.
+Filters define the floor — they eliminate the ineligible, not identify the best. <span class="badge impl">Prototype</span> All filters use AND logic; a fund that fails any single condition is out.
 
-- **Minimum viability gates** apply to every strategy without exception: AUM ≥ ₹500 Cr (below this, large redemptions can move the NAV), Fund Age ≥ 3 years (insufficient data before this), Direct plan must exist
-- **Qualitative gates:** Expense ratio cap (>1.2% for equity is expensive), manager tenure floor, SEBI riskometer alignment with the user's declared risk tolerance
+- <span class="badge impl">Prototype</span> **Minimum viability gates** apply to every strategy without exception: AUM ≥ ₹500 Cr <span class="badge assume">Assumption</span> (below this, large redemptions can move the NAV), Fund Age ≥ 3 years <span class="badge assume">Assumption</span> (insufficient data before this), Direct plan must exist
+- **Qualitative gates:** Expense ratio cap >1.2% for equity <span class="badge assume">Assumption</span>, manager tenure floor, <span class="badge reg">Regulatory</span> SEBI riskometer alignment with the user's declared risk tolerance
 - **Section-specific gates:** For Debt — modified duration and credit quality (AAA %, Sovereign %) matter. For Hybrid — verify actual equity/debt allocation matches the mandate
-- **UX principle:** Show live fund count as filters are added. Warn below 5 funds; never block. Pre-populate sensible defaults so users aren't starting from zero
+- <span class="badge impl">Prototype</span> **UX principle:** Show live fund count as filters are added. Warn below 5 funds; never block. Pre-populate sensible defaults so users aren't starting from zero
 
 ### Ranking
 Ranking orders eligible funds from best to worst. Raw metric values across different scales (Sharpe ratio vs AUM vs CAGR %) aren't directly comparable — the solution is percentile normalisation.
 
-- Every metric is converted to a 0–100 percentile rank within the filtered pool. Direction is pre-set: lower expense ratio → higher rank
-- User-defined weights are applied across selected metrics to produce a single composite score per fund
+- <span class="badge impl">Prototype</span> Every metric is converted to a 0–100 percentile rank within the filtered pool. Direction is pre-set: lower expense ratio → higher rank
+- <span class="badge impl">Prototype</span> User-defined weights are applied across selected metrics to produce a single composite score per fund
 - **Metric priority:** Prefer risk-adjusted returns (Sharpe, Sortino, Alpha) and rolling returns over trailing returns. 1Y return is the least reliable signal — highly sensitive to the measurement start date
 - **Pool-relative scoring:** A fund with 12% 3Y CAGR scores differently depending on what else is in the pool. This is intentional — ranking is always relative to the selected universe
 
 ### Scoring
-The composite score (0–100) serves three roles: determines rank order, drives capital allocation in score-based weighting, and enables threshold decisions ("only carry funds scoring above 60").
+<span class="badge impl">Prototype</span> The composite score (0–100) serves three roles: determines rank order, drives capital allocation in score-based weighting, and enables threshold decisions ("only carry funds scoring above 60").
 
-- **Score-based weighting — two modes:** Softmax compresses the score distribution so the top fund doesn't dominate; Linear distributes capital directly proportional to score
-- **Edge cases:** Pools with fewer than 5 funds produce coarse rankings. Funds with missing data for a ranked metric are excluded from that metric's computation — their score is based on remaining metrics only. Never impute zero or mean for missing values
+- <span class="badge impl">Prototype</span> **Score-based weighting — two modes:** Softmax compresses the score distribution so the top fund doesn't dominate; Linear distributes capital directly proportional to score
+- **Edge cases:** Pools with fewer than 5 funds produce coarse rankings. <span class="badge impl">Prototype</span> Funds with missing data for a ranked metric are excluded from that metric's computation — their score is based on remaining metrics only. Never impute zero or mean for missing values
 - Adding both 3Y CAGR and 5Y CAGR at equal weight double-counts long-run returns — future UX should surface correlation warnings
 
 ### Portfolio Construction
 Once funds are scored and ranked, the basket is assembled.
 
-- **Four weighting methods:** Equal (1/N, transparent baseline), Score-Based (conviction-weighted), Risk-Based (inverse volatility, lower-risk funds get more), Category-Based (user sets Equity/Debt/Hybrid split first, distributes equally within each)
-- **Concentration limits** are user-configurable guardrails — max/min weight per fund. Informational only; the system warns, never blocks
-- **Top N selection** happens after scoring and weighting so users see the computed allocations before deciding how many funds to carry forward
-- **Capital allocation:** Residual from NAV-unit rounding is surfaced as uninvested cash. Warn (don't block) if any fund's allocation falls below the ₹500 minimum
+- <span class="badge impl">Prototype</span> **Four weighting methods:** Equal (1/N, transparent baseline), Score-Based (conviction-weighted), Risk-Based (inverse volatility, lower-risk funds get more), Category-Based (user sets Equity/Debt/Hybrid split first, distributes equally within each)
+- <span class="badge impl">Prototype</span> **Concentration limits** are user-configurable guardrails — max/min weight per fund. Informational only; the system warns, never blocks
+- <span class="badge impl">Prototype</span> **Top N selection** happens after scoring and weighting so users see the computed allocations before deciding how many funds to carry forward
+- <span class="badge impl">Prototype</span> **Capital allocation:** Residual from NAV-unit rounding is surfaced as uninvested cash. Warn (don't block) if any fund's allocation falls below the ₹500 minimum
 
 ---
 
@@ -139,9 +139,9 @@ Once funds are scored and ranked, the basket is assembled.
 
 **Kalpi's response:**
 - Detect overlap at construction time by comparing top holdings across selected funds
-- Flag pairs with >60% holdings overlap: "Fund A and Fund B share 68% of their top holdings"
+- <span class="badge assume">Assumption</span> Flag pairs with >60% holdings overlap: "Fund A and Fund B share 68% of their top holdings"
 - Surface the most repeated underlying stocks: "HDFC Bank appears in 6 of your 8 funds"
-- Warn, don't block — a user may intentionally concentrate; inform them clearly and let them proceed
+- <span class="badge impl">Prototype</span> Warn, don't block — a user may intentionally concentrate; inform them clearly and let them proceed
 - Future: show a portfolio-level stock heatmap so users can visually see the true underlying diversification
 
 ---
@@ -152,9 +152,9 @@ Once funds are scored and ranked, the basket is assembled.
 **Why it matters:** AMC-level risk is distinct from fund-level risk. A regulatory sanction, a key fund manager exodus, or a compliance failure at the AMC level can affect all its funds simultaneously.
 
 **Kalpi's response:**
-- Flag when any single AMC represents >25% of the basket's total allocation
+- <span class="badge assume">Assumption</span> Flag when any single AMC represents >25% of the basket's total allocation
 - Surface as a diagnostic: "3 of your 8 funds are from HDFC AMC, representing 42% of capital"
-- Allow a soft constraint at construction time: "max 2 funds per AMC" — applies before final selection
+- <span class="badge assume">Assumption</span> Allow a soft constraint at construction time: "max 2 funds per AMC" — applies before final selection
 - Do not enforce automatically; a user with strong conviction on an AMC's quality should be able to override with explicit acknowledgement
 
 ---
@@ -165,7 +165,7 @@ Once funds are scored and ranked, the basket is assembled.
 **Real example:** In 2021, Small Cap funds dominated 3Y CAGR rankings. A return-heavy scoring model applied to a basket that also includes Large Cap would fill most slots with Small Cap funds, defeating the intent of the multi-universe selection.
 
 **Kalpi's response:**
-- Warn when >50% of the selected Top N funds come from a single sub-universe
+- <span class="badge assume">Assumption</span> Warn when >50% of the selected Top N funds come from a single sub-universe
 - Make the imbalance visible before the user carries funds to the portfolio: "7 of 10 selected funds are Flexi Cap"
 - Future: offer a "universe-proportionate" mode that guarantees at least one fund per selected universe in the final basket
 - Let the user manually pin a fund from an underrepresented universe if they want explicit coverage
@@ -179,7 +179,7 @@ Once funds are scored and ranked, the basket is assembled.
 
 **Kalpi's response:**
 - Monitor actual portfolio composition metrics (large cap %, mid cap %, small cap %) per fund over rolling 6-month windows
-- Flag in portfolio diagnostics: "Fund X is classified as Flexi Cap but has held >80% large-cap allocation for the last 6 months"
+- <span class="badge assume">Assumption</span> Flag in portfolio diagnostics: "Fund X is classified as Flexi Cap but has held >80% large-cap allocation for the last 6 months"
 - Quarterly strategy re-runs naturally surface this — if the user has a "large cap %" filter or ranking factor, a drifted fund will score differently on the latest data
 - In a future state: automated drift alerts triggered by composition thresholds, not just periodic re-runs
 
@@ -191,20 +191,20 @@ Once funds are scored and ranked, the basket is assembled.
 **Why it's insidious:** A backtest showing "this strategy returned 15% CAGR over 10 years" is likely overstated because it never encountered any of the funds that were shut down during that period. The strategy looks better than it would have performed in practice.
 
 **Kalpi's response:**
-- Acknowledge this limitation explicitly wherever historical performance is shown: "Backtest results exclude funds that were wound up or merged during the period; actual returns may be lower"
+- <span class="badge impl">Prototype</span> Acknowledge this limitation explicitly wherever historical performance is shown: "Backtest results exclude funds that were wound up or merged during the period; actual returns may be lower"
 - Tag funds in the data layer that have absorbed a merger — the track record pre-merger belongs to a different entity
 - For live strategies, survivorship bias is less relevant — the strategy runs on currently existing funds; but any "strategy comparison" over historical periods must carry this caveat prominently
 
 ---
 
 ### Fund Mergers
-**The problem:** SEBI's 2018 mutual fund rationalisation directive forced AMCs to merge overlapping funds within the same category. As a result, many funds today carry a track record that is stitched together from two or more different entities — with different mandates, managers, AUM profiles, and investment styles. A "5Y return" on such a fund is not a continuous, comparable number.
+**The problem:** <span class="badge reg">Regulatory</span> SEBI's 2018 mutual fund rationalisation directive forced AMCs to merge overlapping funds within the same category. As a result, many funds today carry a track record that is stitched together from two or more different entities — with different mandates, managers, AUM profiles, and investment styles. A "5Y return" on such a fund is not a continuous, comparable number.
 
 **Real example:** Several Corporate Bond funds today absorbed Short Duration funds in 2018. Their 5Y return includes a period when the fund had a shorter duration mandate and a different manager — the comparison to a peer with a clean 5Y history is misleading.
 
 **Kalpi's response:**
-- Tag funds that underwent a merger in the last 5 years with a visible label: "Post-merger track record"
-- For these funds, downweight or exclude long-term trailing metrics (5Y CAGR, inception-to-date return) from ranking; rely on shorter windows where the current mandate is intact
+- <span class="badge impl">Prototype</span> Tag funds that underwent a merger in the last 5 years with a visible label: "Post-merger track record"
+- <span class="badge assume">Assumption</span> For these funds, downweight or exclude long-term trailing metrics (5Y CAGR, inception-to-date return) from ranking; rely on shorter windows where the current mandate is intact
 - Surface this in the fund detail view so users understand the data context before assigning high ranking weight to long-term metrics
 
 ---
@@ -218,9 +218,9 @@ Once funds are scored and ranked, the basket is assembled.
 - Passively managed ETFs and index funds launched in the last 2 years
 
 **Kalpi's response:**
-- The default Fund Age ≥ 3 years filter eliminates most of these from the eligible pool
-- If a user removes the age filter, warn: "X funds in your pool have less than 3 years of data; their 3Y/5Y rankings are unreliable"
-- Do not impute scores for missing long-term metrics — exclude the fund from those specific metric calculations and score it only on available data with a proportional weight adjustment
+- <span class="badge impl">Prototype</span> The default Fund Age ≥ 3 years filter eliminates most of these from the eligible pool
+- <span class="badge impl">Prototype</span> If a user removes the age filter, warn: "X funds in your pool have less than 3 years of data; their 3Y/5Y rankings are unreliable"
+- <span class="badge impl">Prototype</span> Do not impute scores for missing long-term metrics — exclude the fund from those specific metric calculations and score it only on available data with a proportional weight adjustment
 - Future: offer a dedicated "Emerging Funds" view where new funds are evaluated only on metrics they have sufficient data for (1Y rolling return, expense ratio, fund house track record)
 
 ---
@@ -234,17 +234,17 @@ Once funds are scored and ranked, the basket is assembled.
 - Excluding the fund entirely from the pool wastes a potentially valid candidate
 
 **Kalpi's response:**
-- For any fund missing a specific ranked metric: exclude it from that metric's percentile computation only; redistribute that metric's weight proportionally to remaining metrics in the composite score
-- Surface data gaps transparently: "3 funds were scored on 4 of 5 metrics — Sharpe 3Y data was unavailable for these funds"
-- If >30% of the ranked pool is missing a metric, warn the user: "This metric has low coverage in your selected universe — consider removing it from ranking or choosing a better-covered alternative"
-- Track data freshness per metric; flag when a fund's holdings data is more than 2 months stale
+- <span class="badge impl">Prototype</span> For any fund missing a specific ranked metric: exclude it from that metric's percentile computation only; redistribute that metric's weight proportionally to remaining metrics in the composite score
+- <span class="badge impl">Prototype</span> Surface data gaps transparently: "3 funds were scored on 4 of 5 metrics — Sharpe 3Y data was unavailable for these funds"
+- <span class="badge assume">Assumption</span> If >30% of the ranked pool is missing a metric, warn the user: "This metric has low coverage in your selected universe — consider removing it from ranking or choosing a better-covered alternative"
+- <span class="badge assume">Assumption</span> Track data freshness per metric; flag when a fund's holdings data is more than 2 months stale
 
 ---
 
 ### Exit Loads
 **The problem:** Most equity mutual funds charge a 1% exit load if redeemed within 12 months of purchase. Some debt funds charge 0.5% within 3–6 months. Rebalancing without accounting for these loads can silently erode returns — a drift correction that frees up ₹80 of value but triggers ₹100 in exit load is a net loss, not a gain.
 
-**Fund-type reference:**
+**Fund-type reference:** <span class="badge reg">Regulatory</span>
 
 | Fund Type | Typical Exit Load | Window |
 |---|---|---|
@@ -257,10 +257,10 @@ Once funds are scored and ranked, the basket is assembled.
 | Liquid / Overnight | 0% | No load |
 
 **Kalpi's response:**
-- Surface exit load status per fund in the portfolio view — show which funds are within their load window and when they exit it
-- Before any rebalancing order is confirmed, show the estimated exit load cost per fund being sold and the net benefit after load
-- If exit load cost exceeds the value of drift correction for a fund, recommend skipping that specific trade: "Selling Fund X now incurs ₹420 in exit load; drift is within tolerance — skip for this cycle"
-- Recommend quarterly or wider rebalancing cadence for equity-heavy strategies to avoid load windows
+- <span class="badge impl">Prototype</span> Surface exit load status per fund in the portfolio view — show which funds are within their load window and when they exit it
+- <span class="badge impl">Prototype</span> Before any rebalancing order is confirmed, show the estimated exit load cost per fund being sold and the net benefit after load
+- <span class="badge impl">Prototype</span> If exit load cost exceeds the value of drift correction for a fund, recommend skipping that specific trade: "Selling Fund X now incurs ₹420 in exit load; drift is within tolerance — skip for this cycle"
+- <span class="badge assume">Assumption</span> Recommend quarterly or wider rebalancing cadence for equity-heavy strategies to avoid load windows
 - Future: smart rebalancing that automatically excludes funds within their load window from sell candidates unless drift is severe
 
 ---
@@ -268,7 +268,7 @@ Once funds are scored and ranked, the basket is assembled.
 ### Tax Implications
 **The problem:** Every MF redemption in India has a tax consequence that depends on fund type, holding period, and the investor's income slab. Getting this wrong — especially the STCG vs LTCG threshold for equity — meaningfully reduces post-tax returns. The 2023 debt fund tax change and 2024 equity LTCG rate change have made this landscape more complex than most investors realise.
 
-**Current tax regime (post-Budget 2024):**
+**Current tax regime (post-Budget 2024):** <span class="badge reg">Regulatory</span>
 
 | Fund Type | Holding Period | Tax Treatment |
 |---|---|---|
@@ -279,14 +279,14 @@ Once funds are scored and ranked, the basket is assembled.
 | Hybrid (35–65% equity) | ≥ 36 months | 20% (verify per latest budget) |
 
 **Key nuances:**
-- **Debt fund tax shift (2023):** Indexation benefit was removed. Debt MFs are now taxed at slab rate regardless of holding period — making them no more tax-efficient than fixed deposits for investors in the 30% bracket. Arbitrage funds (taxed as equity, FD-like returns) are often a better alternative
-- **LTCG exemption:** First ₹1.25L of equity LTCG per financial year is exempt — relevant for portfolio sizing and staggered redemption planning
-- **No wash-sale rule:** Unlike the US, India does not prohibit selling a fund at a loss and immediately repurchasing it. Tax-loss harvesting is clean — a loss can offset capital gains elsewhere or be carried forward for 8 years
+- <span class="badge reg">Regulatory</span> **Debt fund tax shift (2023):** Indexation benefit was removed. Debt MFs are now taxed at slab rate regardless of holding period — making them no more tax-efficient than fixed deposits for investors in the 30% bracket. Arbitrage funds (taxed as equity, FD-like returns) are often a better alternative
+- <span class="badge reg">Regulatory</span> **LTCG exemption:** First ₹1.25L of equity LTCG per financial year is exempt — relevant for portfolio sizing and staggered redemption planning
+- <span class="badge reg">Regulatory</span> **No wash-sale rule:** Unlike the US, India does not prohibit selling a fund at a loss and immediately repurchasing it. Tax-loss harvesting is clean — a loss can offset capital gains elsewhere or be carried forward for 8 years
 
 **Kalpi's response:**
-- Before any rebalancing, show estimated tax impact per fund: STCG or LTCG, estimated liability at the user's declared tax slab
-- Flag funds approaching the 12-month mark: "Hold 23 more days to qualify for LTCG rate — saves an estimated ₹1,200"
-- For debt fund holdings, surface the tax-equivalence note for high-bracket users: "At 30% slab, this Corporate Bond fund is taxed identically to an FD — consider an arbitrage fund for equivalent risk with equity taxation"
+- <span class="badge impl">Prototype</span> Before any rebalancing, show estimated tax impact per fund: STCG or LTCG, estimated liability at the user's declared tax slab
+- <span class="badge impl">Prototype</span> Flag funds approaching the 12-month mark: "Hold 23 more days to qualify for LTCG rate — saves an estimated ₹1,200"
+- <span class="badge impl">Prototype</span> For debt fund holdings, surface the tax-equivalence note for high-bracket users: "At 30% slab, this Corporate Bond fund is taxed identically to an FD — consider an arbitrage fund for equivalent risk with equity taxation"
 - Future: tax-optimised rebalancing mode that sequences sells to minimise current financial year tax outflow — selling LTCG-eligible lots first, harvesting available losses before year-end
 
 ---
@@ -294,31 +294,31 @@ Once funds are scored and ranked, the basket is assembled.
 ## 4. Execution Design
 
 ### Initial Allocation
-- Each fund receives a rupee allocation = target weight × capital, floored to the nearest NAV unit. Residual becomes uninvested cash
-- **NAV cut-off:** 3:00 PM for equity and most hybrid funds; 1:00 PM for large debt orders (≥₹2 Cr). Orders after cut-off get next business day's NAV
-- **Settlement:** Equity T+1 redemption, T+2 allotment. Debt T+1 both ways. Liquid T+0 redemption
-- **Practical gates:** KYC and PAN verification must be complete. UPI/net banking handles up to ₹2L per transaction; RTGS for large amounts. First investment with an AMC creates a folio
+- <span class="badge impl">Prototype</span> Each fund receives a rupee allocation = target weight × capital, floored to the nearest NAV unit. Residual becomes uninvested cash
+- <span class="badge reg">Regulatory</span> **NAV cut-off:** 3:00 PM for equity and most hybrid funds; 1:00 PM for large debt orders (≥₹2 Cr). Orders after cut-off get next business day's NAV
+- <span class="badge reg">Regulatory</span> **Settlement:** Equity T+1 redemption, T+2 allotment. Debt T+1 both ways. Liquid T+0 redemption
+- <span class="badge reg">Regulatory</span> **Practical gates:** KYC and PAN verification must be complete. UPI/net banking handles up to ₹2L per transaction; RTGS for large amounts. First investment with an AMC creates a folio
 
 ### Rebalancing
-- **Sequence always: sell first, then buy.** Sell overweight positions → wait for settlement → use proceeds to buy underweight. Buying first creates temporary overexposure and may require bridging capital
-- **Before executing:** Check exit load applicability per fund. If the cost of exit load + estimated tax exceeds the benefit of drift correction, skip and log
-- **Tax-lot ordering:** Selling highest-cost lots first (HIFO) minimises taxable gains. Indian MF default is FIFO — HIFO requires explicit selection at the AMC level
-- Use Growth option only — IDCW distributions move NAV unpredictably and complicate weight calculations
+- <span class="badge assume">Assumption</span> **Sequence always: sell first, then buy.** Sell overweight positions → wait for settlement → use proceeds to buy underweight. Buying first creates temporary overexposure and may require bridging capital
+- <span class="badge impl">Prototype</span> **Before executing:** Check exit load applicability per fund. If the cost of exit load + estimated tax exceeds the benefit of drift correction, skip and log
+- <span class="badge reg">Regulatory</span> **Tax-lot ordering:** Selling highest-cost lots first (HIFO) minimises taxable gains. Indian MF default is FIFO — HIFO requires explicit selection at the AMC level
+- <span class="badge assume">Assumption</span> Use Growth option only — IDCW distributions move NAV unpredictably and complicate weight calculations
 
 ### SIPs *(v2 scope)*
 - A strategy SIP distributes a fixed monthly amount across all basket funds proportional to target weights
 - Changing the basket after a strategy re-run requires cancelling old SIP mandates and creating new ones — operationally non-trivial; design must account for this
-- 30-day AMC notice period for SIP cancellation
+- <span class="badge reg">Regulatory</span> 30-day AMC notice period for SIP cancellation
 
 ### Redemptions
-- **Partial — three modes:** Proportional (sell same % from all funds), Overweight-first (rebalances and raises cash simultaneously), or User-specified
-- **Full exit:** Cancel active SIPs before submitting redemption orders — SIP continuation on a redeemed folio is a common operational error
-- Large debt redemptions (>₹2 Cr) may hit daily AMC limits and require multi-day execution
+- <span class="badge impl">Prototype</span> **Partial — three modes:** Proportional (sell same % from all funds), Overweight-first (rebalances and raises cash simultaneously), or User-specified
+- <span class="badge impl">Prototype</span> **Full exit:** Cancel active SIPs before submitting redemption orders — SIP continuation on a redeemed folio is a common operational error
+- <span class="badge reg">Regulatory</span> Large debt redemptions (>₹2 Cr) may hit daily AMC limits and require multi-day execution
 
 ### Practical Constraints
-- NAV is published once daily after market close — no intra-day pricing for MFs
-- **Order routing:** BSE Star MF is the recommended integration starting point (broadest AMC coverage, single API)
-- **Scheme code stability:** Fund names change post-rationalisation; ISIN is stable across renames — use ISIN as the canonical identifier
+- <span class="badge reg">Regulatory</span> NAV is published once daily after market close — no intra-day pricing for MFs
+- <span class="badge assume">Assumption</span> **Order routing:** BSE Star MF is the recommended integration starting point (broadest AMC coverage, single API)
+- <span class="badge assume">Assumption</span> **Scheme code stability:** Fund names change post-rationalisation; ISIN is stable across renames — use ISIN as the canonical identifier
 - **Operational edge cases to handle:** Market holidays (queue orders), AMC downtime (retry with backoff), failed payments (notify user immediately, never silent-skip), folio-bank name mismatch (validate at onboarding, not at redemption)
 
 ---

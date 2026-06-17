@@ -232,6 +232,39 @@
       color: #c0392b;
     }
 
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin: 0 4px 0 2px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      line-height: 18px;
+      white-space: nowrap;
+    }
+    .badge.reg    { background: #fff7ed; color: #c2410c; border: 1px solid #fcd8b0; }
+    .badge.assume { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge.impl   { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+    /* Legend */
+    #badge-legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      padding: 12px 16px;
+      background: #fafafa;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #666;
+    }
+    #badge-legend span { display: flex; align-items: center; gap: 6px; }
+
     /* Responsive */
     @media (max-width: 860px) {
       #sidebar { display: none; }
@@ -250,6 +283,11 @@
 </nav>
 
 <main id="main">
+  <div id="badge-legend">
+    <span><span class="badge reg">Regulatory</span> SEBI / legal mandate</span>
+    <span><span class="badge assume">Assumption</span> Design heuristic / threshold choice</span>
+    <span><span class="badge impl">Prototype</span> Built in this prototype</span>
+  </div>
   {{ content }}
 </main>
 
