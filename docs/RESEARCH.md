@@ -208,12 +208,23 @@ Ranking orders eligible funds from best to worst. Raw metric values across diffe
 - Adding both 3Y CAGR and 5Y CAGR at equal weight double-counts long-run returns — future UX should surface correlation warnings
 
 ### Portfolio Construction
-Once funds are scored and ranked, the basket is assembled.
+Once funds are scored and ranked, the eligible pool is assembled into a basket.
 
-- <span class="badge impl">Prototype</span> **Four weighting methods:** Equal (1/N, transparent baseline), Score-Based (conviction-weighted), Risk-Based (inverse volatility, lower-risk funds get more), Category-Based (user sets Equity/Debt/Hybrid split first, distributes equally within each)
+- <span class="badge impl">Prototype</span> **Top N selection** happens after scoring and weighting — users see computed allocations before deciding how many funds to carry forward to the portfolio
 - <span class="badge impl">Prototype</span> **Concentration limits** are user-configurable guardrails — max/min weight per fund. Informational only; the system warns, never blocks
-- <span class="badge impl">Prototype</span> **Top N selection** happens after scoring and weighting so users see the computed allocations before deciding how many funds to carry forward
-- <span class="badge impl">Prototype</span> **Capital allocation:** Residual from NAV-unit rounding is surfaced as uninvested cash. Warn (don't block) if any fund's allocation falls below the ₹500 minimum
+- <span class="badge assume">Assumption</span> Warn if >50% of the selected Top N comes from a single sub-universe — category concentration check before the basket is finalised
+- **Universe coverage principle:** a fund selected from a universe the user explicitly added should not be silently crowded out by a higher-scoring sub-universe
+
+### Weighting & Capital Allocation
+Target weights translate to rupee allocations. The weighting method is chosen independently of filtering and ranking — any ranked pool can use any method.
+
+- <span class="badge impl">Prototype</span> **Equal (1/N):** Every fund receives the same allocation. Transparent baseline — no assumptions about relative quality
+- <span class="badge impl">Prototype</span> **Score-Based:** Capital proportional to composite score. Two modes: *Softmax* compresses the distribution so the top fund doesn't dominate; *Linear* distributes directly proportional to score
+- <span class="badge impl">Prototype</span> **Risk-Based (Inverse Volatility):** Lower-volatility funds receive more capital. Defensive by default — useful for capital-preservation mandates
+- <span class="badge impl">Prototype</span> **Category-Based:** User sets Equity / Debt / Hybrid split first, then distributes equally within each category. Asset allocation decision is made upstream of fund selection
+- <span class="badge impl">Prototype</span> **Rupee allocation:** Each fund's amount = target weight × capital, floored to the nearest NAV unit. Residual from rounding surfaces as uninvested cash
+- <span class="badge impl">Prototype</span> Warn (don't block) if any fund's allocation falls below the ₹500 minimum lumpsum threshold
+- <span class="badge assume">Assumption</span> Flag if a single fund exceeds 40% of portfolio weight after allocation — concentration risk alert before the user proceeds to rebalancing setup
 
 ---
 
