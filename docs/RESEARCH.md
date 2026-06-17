@@ -1,3 +1,8 @@
+---
+layout: default
+title: Kalpi — Research & Product Thinking
+---
+
 # Kalpi — MF Strategy Builder: Research & Product Thinking
 
 **Author:** Hridyanshu Singhal &nbsp;|&nbsp; **Role:** PM Candidate &nbsp;|&nbsp; **Date:** June 2026
