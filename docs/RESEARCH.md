@@ -128,68 +128,161 @@ Once funds are scored and ranked, the basket is assembled.
 ## 3. Key Challenges & Corner Cases
 
 ### Fund Overlap
-Multiple funds in a basket can hold the same underlying stocks — a user thinks they own 8 diversified funds but effectively hold the same 50 stocks repeated.
-- Flag at construction time when two funds share >60% of holdings
-- Surface the specific overlap ("HDFC Bank appears in 6 of 8 funds at >5% weight")
-- Warn, don't block — a user may knowingly choose overlapping funds
+**The problem:** A user selects 8 funds believing they are well-diversified. In reality, every fund in the basket holds HDFC Bank, Reliance, and Infosys at >5% weight — they have effectively bought the same 30 stocks eight times over. Diversification across fund names provides no actual risk reduction.
+
+**Why it happens:** Return-chasing selection naturally converges on the same high-performing large-caps. Flexi Cap, Large Cap, and Aggressive Hybrid funds in particular overlap heavily during bull markets.
+
+**Kalpi's response:**
+- Detect overlap at construction time by comparing top holdings across selected funds
+- Flag pairs with >60% holdings overlap: "Fund A and Fund B share 68% of their top holdings"
+- Surface the most repeated underlying stocks: "HDFC Bank appears in 6 of your 8 funds"
+- Warn, don't block — a user may intentionally concentrate; inform them clearly and let them proceed
+- Future: show a portfolio-level stock heatmap so users can visually see the true underlying diversification
+
+---
 
 ### AMC Concentration
-Selecting 4 of 8 funds from the same AMC creates correlated operational risk — regulatory action or a key-person event affects a disproportionate share of the portfolio.
-- Flag when any single AMC represents >25% of basket allocation
-- Allow a soft constraint: "maximum 2 funds per AMC"
+**The problem:** A scoring model that rewards consistent performance may end up selecting 4–5 funds from a single fund house — say, HDFC AMC or SBI Funds. The user believes they have a diversified basket; they actually have a concentrated bet on one AMC's operational health, leadership, and compliance culture.
+
+**Why it matters:** AMC-level risk is distinct from fund-level risk. A regulatory sanction, a key fund manager exodus, or a compliance failure at the AMC level can affect all its funds simultaneously.
+
+**Kalpi's response:**
+- Flag when any single AMC represents >25% of the basket's total allocation
+- Surface as a diagnostic: "3 of your 8 funds are from HDFC AMC, representing 42% of capital"
+- Allow a soft constraint at construction time: "max 2 funds per AMC" — applies before final selection
+- Do not enforce automatically; a user with strong conviction on an AMC's quality should be able to override with explicit acknowledgement
+
+---
 
 ### Category Concentration
-When multiple universes are selected, the scoring model may surface all top-N funds from one sub-category if that category happened to perform best in the metric window. A user who selected Large Cap + Flexi Cap + Multi Cap may end up with an all-Flexi-Cap basket.
-- Warn when >50% of selected funds come from one sub-universe
-- Future: guarantee at least one fund per selected universe in the final basket
+**The problem:** Even when a user selects multiple universes (e.g., Large Cap + Flexi Cap + Multi Cap), the composite score may rank all top-N funds from one sub-category — because that category happened to perform best during the metric window being used.
+
+**Real example:** In 2021, Small Cap funds dominated 3Y CAGR rankings. A return-heavy scoring model applied to a basket that also includes Large Cap would fill most slots with Small Cap funds, defeating the intent of the multi-universe selection.
+
+**Kalpi's response:**
+- Warn when >50% of the selected Top N funds come from a single sub-universe
+- Make the imbalance visible before the user carries funds to the portfolio: "7 of 10 selected funds are Flexi Cap"
+- Future: offer a "universe-proportionate" mode that guarantees at least one fund per selected universe in the final basket
+- Let the user manually pin a fund from an underrepresented universe if they want explicit coverage
+
+---
 
 ### Style Drift
-A Flexi Cap fund gradually shifts toward large-cap stocks without a mandate change. The user is getting Large Cap exposure from a fund they selected for Flexi Cap diversification.
-- Track actual portfolio composition (large/mid/small cap %) over time
-- Flag in diagnostics: "Fund X (Flexi Cap) has maintained >80% large-cap allocation for 6 months"
-- Quarterly strategy re-runs naturally catch this when composition filters are applied
+**The problem:** Fund mandates are declared; actual portfolio behaviour can diverge over time. A Flexi Cap fund manager who gradually shifts toward large-caps is not violating any rule — but the user who selected the fund for mid/small-cap exposure is getting something different from what they intended.
+
+**Real example:** Several Flexi Cap funds post-2020 maintained 80%+ large-cap allocation for extended periods, effectively behaving as Large Cap funds without re-classifying. Users holding these in a "diversified" basket had duplicate large-cap exposure.
+
+**Kalpi's response:**
+- Monitor actual portfolio composition metrics (large cap %, mid cap %, small cap %) per fund over rolling 6-month windows
+- Flag in portfolio diagnostics: "Fund X is classified as Flexi Cap but has held >80% large-cap allocation for the last 6 months"
+- Quarterly strategy re-runs naturally surface this — if the user has a "large cap %" filter or ranking factor, a drifted fund will score differently on the latest data
+- In a future state: automated drift alerts triggered by composition thresholds, not just periodic re-runs
+
+---
 
 ### Survivorship Bias
-Historical analysis only sees funds that survived. Merged or wound-up funds — often the worst performers — are invisible, making any historical strategy look better than it was.
-- Acknowledge explicitly in backtest UI: "performance is likely overstated; wound-up funds are excluded"
-- Tag funds in the dataset that absorbed a merger
+**The problem:** Any analysis of historical MF performance — including backtests — only evaluates funds that exist today. Funds that were wound up or merged, typically because of poor performance or mismanagement, are invisible. This systematically inflates the apparent historical returns of any strategy.
+
+**Why it's insidious:** A backtest showing "this strategy returned 15% CAGR over 10 years" is likely overstated because it never encountered any of the funds that were shut down during that period. The strategy looks better than it would have performed in practice.
+
+**Kalpi's response:**
+- Acknowledge this limitation explicitly wherever historical performance is shown: "Backtest results exclude funds that were wound up or merged during the period; actual returns may be lower"
+- Tag funds in the data layer that have absorbed a merger — the track record pre-merger belongs to a different entity
+- For live strategies, survivorship bias is less relevant — the strategy runs on currently existing funds; but any "strategy comparison" over historical periods must carry this caveat prominently
+
+---
 
 ### Fund Mergers
-SEBI's 2018 rationalisation forced many fund mergers. A "5Y track record" may be stitched from two different funds with different mandates and managers — not an apples-to-apples number.
-- Flag funds with a merger in the last 5 years
-- Weight more recent metrics (1Y, 3Y) over inception-to-date returns for these funds
+**The problem:** SEBI's 2018 mutual fund rationalisation directive forced AMCs to merge overlapping funds within the same category. As a result, many funds today carry a track record that is stitched together from two or more different entities — with different mandates, managers, AUM profiles, and investment styles. A "5Y return" on such a fund is not a continuous, comparable number.
 
-### New Funds / Limited History
-NFOs and post-reclassification funds with <3 years of history cannot produce meaningful 3Y or 5Y metrics. Applying the standard ranking formula produces unreliable scores.
-- Default age filter (≥3 years) eliminates most of these
-- If the filter is removed: warn that long-term metrics for young funds are unreliable
-- Exclude, don't impute — score these funds only on available metrics
+**Real example:** Several Corporate Bond funds today absorbed Short Duration funds in 2018. Their 5Y return includes a period when the fund had a shorter duration mandate and a different manager — the comparison to a peer with a clean 5Y history is misleading.
+
+**Kalpi's response:**
+- Tag funds that underwent a merger in the last 5 years with a visible label: "Post-merger track record"
+- For these funds, downweight or exclude long-term trailing metrics (5Y CAGR, inception-to-date return) from ranking; rely on shorter windows where the current mandate is intact
+- Surface this in the fund detail view so users understand the data context before assigning high ranking weight to long-term metrics
+
+---
+
+### New Funds with Limited History
+**The problem:** NFOs and funds that were recently reclassified under SEBI's categories have fewer than 3 years of data. Applying the standard percentile ranking formula to these funds produces unreliable or misleading scores — they rank either artificially high (on limited strong recent data) or low (due to gaps in multi-year metrics).
+
+**Situations where this appears:**
+- New fund launches (NFOs) from established AMCs trying to plug category gaps
+- Funds reclassified post-2018 that effectively have a new mandate but partial historical data
+- Passively managed ETFs and index funds launched in the last 2 years
+
+**Kalpi's response:**
+- The default Fund Age ≥ 3 years filter eliminates most of these from the eligible pool
+- If a user removes the age filter, warn: "X funds in your pool have less than 3 years of data; their 3Y/5Y rankings are unreliable"
+- Do not impute scores for missing long-term metrics — exclude the fund from those specific metric calculations and score it only on available data with a proportional weight adjustment
+- Future: offer a dedicated "Emerging Funds" view where new funds are evaluated only on metrics they have sufficient data for (1Y rolling return, expense ratio, fund house track record)
+
+---
 
 ### Missing Data
-Not every metric applies to every fund type. Smaller AMCs have inconsistent disclosure practices.
-- Exclude the fund from that metric's percentile computation; redistribute weight to remaining metrics
-- Warn if >30% of the pool is missing a ranked metric — the signal is too weak to rely on
+**The problem:** Not every metric is available for every fund, and the availability varies by fund type, AMC disclosure quality, and data provider. Debt-specific metrics (YTM, Modified Duration, Credit Quality breakdown) don't apply to equity funds. Some smaller AMCs update portfolio composition quarterly rather than monthly. Applying a ranking formula with missing inputs silently produces wrong scores.
+
+**Why naive handling fails:**
+- Imputing zero for a missing AAA% would score the fund as having zero AAA exposure — unfairly penalising it
+- Imputing the pool mean makes the fund appear average when it's actually unknown — different problem
+- Excluding the fund entirely from the pool wastes a potentially valid candidate
+
+**Kalpi's response:**
+- For any fund missing a specific ranked metric: exclude it from that metric's percentile computation only; redistribute that metric's weight proportionally to remaining metrics in the composite score
+- Surface data gaps transparently: "3 funds were scored on 4 of 5 metrics — Sharpe 3Y data was unavailable for these funds"
+- If >30% of the ranked pool is missing a metric, warn the user: "This metric has low coverage in your selected universe — consider removing it from ranking or choosing a better-covered alternative"
+- Track data freshness per metric; flag when a fund's holdings data is more than 2 months stale
+
+---
 
 ### Exit Loads
-Most equity funds charge 1% if redeemed within 12 months. Rebalancing without accounting for exit loads can silently destroy returns — a drift correction that frees up ₹80 but triggers ₹100 in exit load is a net loss.
-- Surface exit load per fund and estimated cost before any rebalancing order
-- Recommend quarterly or wider rebalancing cadence for equity funds
-- Future: skip rebalancing a fund if its exit load exceeds the gain from drift correction
+**The problem:** Most equity mutual funds charge a 1% exit load if redeemed within 12 months of purchase. Some debt funds charge 0.5% within 3–6 months. Rebalancing without accounting for these loads can silently erode returns — a drift correction that frees up ₹80 of value but triggers ₹100 in exit load is a net loss, not a gain.
+
+**Fund-type reference:**
+
+| Fund Type | Typical Exit Load | Window |
+|---|---|---|
+| Equity (Large/Flexi/Multi Cap) | 1% | Within 12 months |
+| Aggressive Hybrid | 1% | Within 12 months |
+| Balanced Advantage / DAA | 1% | Within 12 months |
+| Corporate Bond | 0–0.5% | Within 3–6 months |
+| Short Duration | 0% | Typically nil |
+| Dynamic Bond | 0–1% | Varies by AMC |
+| Liquid / Overnight | 0% | No load |
+
+**Kalpi's response:**
+- Surface exit load status per fund in the portfolio view — show which funds are within their load window and when they exit it
+- Before any rebalancing order is confirmed, show the estimated exit load cost per fund being sold and the net benefit after load
+- If exit load cost exceeds the value of drift correction for a fund, recommend skipping that specific trade: "Selling Fund X now incurs ₹420 in exit load; drift is within tolerance — skip for this cycle"
+- Recommend quarterly or wider rebalancing cadence for equity-heavy strategies to avoid load windows
+- Future: smart rebalancing that automatically excludes funds within their load window from sell candidates unless drift is severe
+
+---
 
 ### Tax Implications
-India's MF tax regime materially affects the right rebalancing strategy, fund type choice, and redemption sequencing.
+**The problem:** Every MF redemption in India has a tax consequence that depends on fund type, holding period, and the investor's income slab. Getting this wrong — especially the STCG vs LTCG threshold for equity — meaningfully reduces post-tax returns. The 2023 debt fund tax change and 2024 equity LTCG rate change have made this landscape more complex than most investors realise.
 
-| Fund Type | Holding | Tax |
+**Current tax regime (post-Budget 2024):**
+
+| Fund Type | Holding Period | Tax Treatment |
 |---|---|---|
-| Equity (>65% equity) | <12 months | 20% STCG |
-| Equity (>65% equity) | ≥12 months | 12.5% LTCG on gains above ₹1.25L |
-| Debt | Any period | Slab rate (up to 30%) |
-| Hybrid (35–65% equity) | <36 months | Slab rate |
+| Equity (>65% equity) | < 12 months | 20% STCG (flat) |
+| Equity (>65% equity) | ≥ 12 months | 12.5% LTCG on gains above ₹1.25L per FY |
+| Debt (< 35% equity) | Any | Slab rate — up to 30% for highest bracket |
+| Hybrid (35–65% equity) | < 36 months | Slab rate |
+| Hybrid (35–65% equity) | ≥ 36 months | 20% (verify per latest budget) |
 
-- Don't rebalance equity holdings within 12 months — 20% vs 12.5% is a meaningful gap
-- Flag funds approaching the 12-month mark: "Hold X more days to qualify for LTCG"
-- Debt MFs are now taxed at slab rate — no advantage over FDs for high-bracket investors; surface this contextually
-- India has no wash-sale rule — loss harvesting is clean and doesn't require a 30-day wait
+**Key nuances:**
+- **Debt fund tax shift (2023):** Indexation benefit was removed. Debt MFs are now taxed at slab rate regardless of holding period — making them no more tax-efficient than fixed deposits for investors in the 30% bracket. Arbitrage funds (taxed as equity, FD-like returns) are often a better alternative
+- **LTCG exemption:** First ₹1.25L of equity LTCG per financial year is exempt — relevant for portfolio sizing and staggered redemption planning
+- **No wash-sale rule:** Unlike the US, India does not prohibit selling a fund at a loss and immediately repurchasing it. Tax-loss harvesting is clean — a loss can offset capital gains elsewhere or be carried forward for 8 years
+
+**Kalpi's response:**
+- Before any rebalancing, show estimated tax impact per fund: STCG or LTCG, estimated liability at the user's declared tax slab
+- Flag funds approaching the 12-month mark: "Hold 23 more days to qualify for LTCG rate — saves an estimated ₹1,200"
+- For debt fund holdings, surface the tax-equivalence note for high-bracket users: "At 30% slab, this Corporate Bond fund is taxed identically to an FD — consider an arbitrage fund for equivalent risk with equity taxation"
+- Future: tax-optimised rebalancing mode that sequences sells to minimise current financial year tax outflow — selling LTCG-eligible lots first, harvesting available losses before year-end
 
 ---
 
