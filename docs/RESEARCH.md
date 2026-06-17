@@ -746,33 +746,368 @@ Target weights translate to rupee allocations. The weighting method is chosen in
 
 ## 4. Execution Design
 
-### Initial Allocation
-- <span class="badge impl">Prototype</span> Each fund receives a rupee allocation = target weight × capital, floored to the nearest NAV unit. Residual becomes uninvested cash
-- <span class="badge reg">Regulatory</span> **NAV cut-off:** 3:00 PM for equity and most hybrid funds; 1:00 PM for large debt orders (≥₹2 Cr). Orders after cut-off get next business day's NAV
-- <span class="badge reg">Regulatory</span> **Settlement:** Equity T+1 redemption, T+2 allotment. Debt T+1 both ways. Liquid T+0 redemption
-- <span class="badge reg">Regulatory</span> **Practical gates:** KYC and PAN verification must be complete. UPI/net banking handles up to ₹2L per transaction; RTGS for large amounts. First investment with an AMC creates a folio
+Execution is a 5-stage lifecycle — from capital allocation through ongoing monitoring and action.
 
-### Rebalancing
-- <span class="badge assume">Assumption</span> **Sequence always: sell first, then buy.** Sell overweight positions → wait for settlement → use proceeds to buy underweight. Buying first creates temporary overexposure and may require bridging capital
-- <span class="badge impl">Prototype</span> **Before executing:** Check exit load applicability per fund. If the cost of exit load + estimated tax exceeds the benefit of drift correction, skip and log
-- <span class="badge reg">Regulatory</span> **Tax-lot ordering:** Selling highest-cost lots first (HIFO) minimises taxable gains. Indian MF default is FIFO — HIFO requires explicit selection at the AMC level
-- <span class="badge assume">Assumption</span> Use Growth option only — IDCW distributions move NAV unpredictably and complicate weight calculations
+<div class="fw-pipeline">
+<div class="fw-node">
+<div class="fw-node-step">Stage 01</div>
+<div class="fw-node-title">Allocate</div>
+<div class="fw-node-sub">Floor to NAV unit · Surface residual cash</div>
+<div class="fw-node-badges"><span class="badge impl">Prototype</span></div>
+</div>
+<div class="fw-node">
+<div class="fw-node-step">Stage 02</div>
+<div class="fw-node-title">Submit</div>
+<div class="fw-node-sub">Check NAV cut-off · Verify pre-conditions · Route via BSE Star MF</div>
+<div class="fw-node-badges"><span class="badge reg">Regulatory</span> <span class="badge assume">Assumption</span></div>
+</div>
+<div class="fw-node">
+<div class="fw-node-step">Stage 03</div>
+<div class="fw-node-title">Settle</div>
+<div class="fw-node-sub">T+0 Liquid · T+1 Debt · T+2 Equity allotment</div>
+<div class="fw-node-badges"><span class="badge reg">Regulatory</span></div>
+</div>
+<div class="fw-node">
+<div class="fw-node-step">Stage 04</div>
+<div class="fw-node-title">Monitor</div>
+<div class="fw-node-sub">Track drift · Load windows · Tax positions</div>
+<div class="fw-node-badges"><span class="badge impl">Prototype</span></div>
+</div>
+<div class="fw-node">
+<div class="fw-node-step">Stage 05</div>
+<div class="fw-node-title">Act</div>
+<div class="fw-node-sub">Rebalance · Redeem · Full exit · SIP</div>
+<div class="fw-node-badges"><span class="badge impl">Prototype</span></div>
+</div>
+</div>
 
-### SIPs *(v2 scope)*
-- A strategy SIP distributes a fixed monthly amount across all basket funds proportional to target weights
-- Changing the basket after a strategy re-run requires cancelling old SIP mandates and creating new ones — operationally non-trivial; design must account for this
-- <span class="badge reg">Regulatory</span> 30-day AMC notice period for SIP cancellation
+<div class="cc-container">
+<div class="cc-tabs">
+<button class="cc-tab active" data-case="init">Initial Allocation</button>
+<button class="cc-tab" data-case="rebal">Rebalancing</button>
+<button class="cc-tab" data-case="sips">SIPs</button>
+<button class="cc-tab" data-case="redeem">Redemptions</button>
+<button class="cc-tab" data-case="practical">Practical Constraints</button>
+</div>
 
-### Redemptions
-- <span class="badge impl">Prototype</span> **Partial — three modes:** Proportional (sell same % from all funds), Overweight-first (rebalances and raises cash simultaneously), or User-specified
-- <span class="badge impl">Prototype</span> **Full exit:** Cancel active SIPs before submitting redemption orders — SIP continuation on a redeemed folio is a common operational error
-- <span class="badge reg">Regulatory</span> Large debt redemptions (>₹2 Cr) may hit daily AMC limits and require multi-day execution
+<div class="cc-panel active" id="cc-init">
+<div class="cc-card">
+<div class="cc-card-header">
+<span class="cc-cat reg">Regulatory</span>
+<span class="cc-title">Initial Allocation</span>
+<span class="cc-impact high">High Impact</span>
+</div>
+<div class="cc-rows">
+<div class="cc-row">
+<div class="cc-row-label">How</div>
+<div class="cc-row-body">Each fund receives rupee allocation = target weight × capital, floored to the nearest NAV unit. Residual from rounding surfaces as uninvested cash. Pre-condition checks must clear before any order is submitted.</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Rules</div>
+<div class="cc-row-body">
+<ul>
+<li><span class="badge reg">Regulatory</span> <strong>NAV cut-off:</strong> 3:00 PM equity/hybrid · 1:00 PM debt ≥₹2 Cr — orders after cut-off get next business day's NAV</li>
+<li><span class="badge reg">Regulatory</span> <strong>Settlement:</strong> Equity T+1 redemption T+2 allotment · Debt T+1 both ways · Liquid T+0</li>
+<li><span class="badge reg">Regulatory</span> <strong>Pre-conditions:</strong> KYC + PAN verified · UPI ≤₹2L per transaction (RTGS for larger) · First AMC investment creates a folio</li>
+</ul>
+</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Kalpi</div>
+<div class="cc-row-body">
+<ul>
+<li><span class="badge impl">Prototype</span> Floor each allocation to nearest NAV unit; surface residual as uninvested cash on the confirmation screen</li>
+<li><span class="badge impl">Prototype</span> Warn if order will miss today's NAV cut-off: <em>"Submit before 3:00 PM for today's NAV"</em></li>
+<li><span class="badge impl">Prototype</span> Show which funds have pending pre-condition checks (KYC, folio creation) before confirming</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Same-day NAV eligibility window</div>
+<div class="nav-bar-wrap">
+<div class="nav-zone" style="width:50%;background:#15803d;">9 AM – 1 PM · All funds</div>
+<div class="nav-zone" style="width:25%;background:#854d0e;">1–3 PM · Equity only</div>
+<div class="nav-zone" style="width:25%;background:#c0392b;">3 PM+ · Next day NAV</div>
+</div>
+<div style="position:relative;height:36px;margin-bottom:14px;">
+<span style="position:absolute;left:0;font-size:9px;color:#aaa;">9 AM</span>
+<span style="position:absolute;left:50%;transform:translateX(-50%);font-size:9px;text-align:center;color:#854d0e;font-weight:700;">1:00 PM<br><span style="font-weight:400;color:#aaa;font-size:8px;">Debt ≥₹2Cr closes</span></span>
+<span style="position:absolute;left:75%;transform:translateX(-50%);font-size:9px;text-align:center;color:#991b1b;font-weight:700;">3:00 PM<br><span style="font-weight:400;color:#aaa;font-size:8px;">All windows close</span></span>
+<span style="position:absolute;right:0;font-size:9px;color:#aaa;text-align:right;">5 PM<br><span style="font-size:8px;font-weight:400;">NAV published</span></span>
+</div>
+<div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#bbb;margin-bottom:8px;">Settlement cycles</div>
+<table class="nav-settle-grid">
+<thead><tr><th>Fund type</th><th>Redemption settles</th><th>Purchase allots</th></tr></thead>
+<tbody>
+<tr><td>Liquid / Overnight</td><td><span class="t0">T+0</span></td><td><span class="t0">T+0</span></td></tr>
+<tr><td>Debt (most categories)</td><td><span class="t1">T+1</span></td><td><span class="t1">T+1</span></td></tr>
+<tr><td>Equity / Flexi / Multi Cap</td><td><span class="t1">T+1</span></td><td><span class="t2">T+2</span></td></tr>
+<tr><td>Hybrid (Aggressive / BAF)</td><td><span class="t1">T+1</span></td><td><span class="t2">T+2</span></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
 
-### Practical Constraints
-- <span class="badge reg">Regulatory</span> NAV is published once daily after market close — no intra-day pricing for MFs
-- <span class="badge assume">Assumption</span> **Order routing:** BSE Star MF is the recommended integration starting point (broadest AMC coverage, single API)
-- <span class="badge assume">Assumption</span> **Scheme code stability:** Fund names change post-rationalisation; ISIN is stable across renames — use ISIN as the canonical identifier
-- **Operational edge cases to handle:** Market holidays (queue orders), AMC downtime (retry with backoff), failed payments (notify user immediately, never silent-skip), folio-bank name mismatch (validate at onboarding, not at redemption)
+<div class="cc-panel" id="cc-rebal">
+<div class="cc-card">
+<div class="cc-card-header">
+<span class="cc-cat reg">Regulatory</span>
+<span class="cc-title">Rebalancing</span>
+<span class="cc-impact high">High Impact</span>
+</div>
+<div class="cc-rows">
+<div class="cc-row">
+<div class="cc-row-label">How</div>
+<div class="cc-row-body">Drift detected → cost gate (exit load + tax) → sell overweight using HIFO lots → wait settlement → buy underweight. If cost exceeds correction value at any gate, skip and log for the next cycle.</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Rules</div>
+<div class="cc-row-body">
+<ul>
+<li><span class="badge assume">Assumption</span> <strong>Sell first, then buy</strong> — buying first creates temporary overexposure and may require bridging capital</li>
+<li><span class="badge reg">Regulatory</span> <strong>Tax-lot ordering:</strong> HIFO (highest cost first) minimises taxable gains · Indian MF default is FIFO — HIFO requires explicit selection at the AMC level</li>
+<li><span class="badge assume">Assumption</span> <strong>Growth option only</strong> — IDCW distributions move NAV unpredictably and complicate weight calculations</li>
+</ul>
+</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Kalpi</div>
+<div class="cc-row-body">
+<ul>
+<li><span class="badge impl">Prototype</span> Before each sell: compute exit load + estimated tax · Show per-fund net benefit breakdown</li>
+<li><span class="badge impl">Prototype</span> Skip + log if cost &gt; drift correction value — surface skipped trades in the rebalancing summary</li>
+<li><span class="badge assume">Assumption</span> Flag any IDCW-option fund in basket — prompt switch to Growth before strategy executes</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Rebalancing decision gate</div>
+<div class="rb-flow">
+<div class="rb-step">
+<div class="rb-line"><div class="rb-dot" style="border-color:#6366f1;background:#6366f1;"></div><div class="rb-stem"></div></div>
+<div class="rb-box" style="border-color:#e0e7ff;background:#f5f3ff;">
+<div class="rb-box-label">Pre-conditions</div>
+<div class="rb-box-text">Growth option only · HIFO lot ordering · ISIN-based fund lookup</div>
+<div class="rb-box-sub"><span class="badge assume">Assumption</span> Growth only prevents IDCW NAV disruption &nbsp; <span class="badge reg">Regulatory</span> HIFO requires explicit AMC selection (default is FIFO)</div>
+</div>
+</div>
+<div class="rb-spacer"></div>
+<div class="rb-step">
+<div class="rb-line"><div class="rb-dot active"></div><div class="rb-stem"></div></div>
+<div class="rb-box gate">
+<div class="rb-box-label">Gate 1 — Drift Check</div>
+<div class="rb-box-text">Is fund's current weight outside the drift threshold?</div>
+<div class="rb-outcomes"><span class="rb-no">✗ Within threshold → no action this cycle</span><span class="rb-yes">✓ Exceeds threshold → continue</span></div>
+</div>
+</div>
+<div class="rb-spacer"></div>
+<div class="rb-step">
+<div class="rb-line"><div class="rb-dot active"></div><div class="rb-stem"></div></div>
+<div class="rb-box gate">
+<div class="rb-box-label">Gate 2 — Cost Gate</div>
+<div class="rb-box-text">Exit load cost + estimated tax liability vs. drift correction value</div>
+<div class="rb-box-sub"><span class="badge impl">Prototype</span> Example: "Correcting saves ₹800 · Exit load ₹420 · Tax ~₹180 · Net: +₹200 → proceed"</div>
+<div class="rb-outcomes"><span class="rb-no">✗ Cost &gt; benefit → skip + log, retry next cycle</span><span class="rb-yes">✓ Net positive → proceed</span></div>
+</div>
+</div>
+<div class="rb-spacer"></div>
+<div class="rb-step">
+<div class="rb-line"><div class="rb-dot active"></div><div class="rb-stem" style="background:transparent;"></div></div>
+<div class="rb-box" style="border-color:#bbf7d0;background:#f0fdf4;">
+<div class="rb-box-label">Execute</div>
+<div class="rb-box-text">Sell overweight (HIFO lots) → Wait T+1/T+2 settlement → Buy underweight</div>
+<div class="rb-box-sub"><span class="badge assume">Assumption</span> Sell first, buy second — proceeds from settlement fund the buy leg</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="cc-panel" id="cc-sips">
+<div class="cc-card">
+<div class="cc-card-header">
+<span class="cc-cat" style="background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;">v2 Scope</span>
+<span class="cc-title">SIPs</span>
+<span class="cc-impact low">Not in prototype</span>
+</div>
+<div class="cc-rows">
+<div class="cc-row">
+<div class="cc-row-label">How</div>
+<div class="cc-row-body">A strategy SIP distributes a fixed monthly amount across all basket funds proportional to target weights. Each fund receives (weight × monthly amount), floored to nearest NAV unit. Basket changes after a strategy re-run require full mandate cancellation and re-creation.</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Rules</div>
+<div class="cc-row-body">
+<ul>
+<li><span class="badge reg">Regulatory</span> 30-day AMC notice period for SIP cancellation — basket changes are not instantaneous</li>
+<li>Fund amounts below ₹500 per fund violate minimum lumpsum threshold — round up or exclude that fund from the SIP</li>
+<li>SIP on a redeemed or cancelled folio is a common operational error — system must block it explicitly</li>
+</ul>
+</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Kalpi</div>
+<div class="cc-row-body">
+<ul>
+<li>Monthly: distribute proportional to target weights · Floor to ₹500 minimum per fund</li>
+<li><span class="badge impl">Prototype</span> Warn before re-run if active SIPs exist: <em>"Changing basket requires cancelling existing SIPs — takes up to 30 days"</em></li>
+<li>Block new SIP creation on a folio with pending redemption — validate folio status before mandate creation</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Monthly SIP — ₹10,000 distributed by target weight</div>
+<div class="sip-dist">
+<div class="sip-row"><div class="sip-label">Fund A</div><div class="sip-bar-wrap"><div class="sip-fill" style="width:35%;background:#c0392b;">35%</div></div><div class="sip-amt">₹3,500</div></div>
+<div class="sip-row"><div class="sip-label">Fund B</div><div class="sip-bar-wrap"><div class="sip-fill" style="width:30%;background:#6366f1;">30%</div></div><div class="sip-amt">₹3,000</div></div>
+<div class="sip-row"><div class="sip-label">Fund C</div><div class="sip-bar-wrap"><div class="sip-fill" style="width:25%;background:#ea580c;">25%</div></div><div class="sip-amt">₹2,500</div></div>
+<div class="sip-row"><div class="sip-label">Fund D</div><div class="sip-bar-wrap"><div class="sip-fill" style="width:10%;background:#888;">10%</div></div><div class="sip-amt">₹1,000</div></div>
+</div>
+<div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#bbb;margin:4px 0 8px;">Basket change flow</div>
+<div style="display:flex;align-items:center;">
+<div style="flex:1;padding:8px 10px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:4px 0 0 4px;font-size:10.5px;text-align:center;"><div style="font-weight:700;color:#1d4ed8;">Strategy Re-run</div><div style="color:#888;font-size:9.5px;margin-top:2px;">Basket changes</div></div>
+<div style="font-size:16px;color:#ddd;padding:0 4px;">→</div>
+<div style="flex:1;padding:8px 10px;background:#fff7ed;border-top:1.5px solid #fcd8b0;border-bottom:1.5px solid #fcd8b0;font-size:10.5px;text-align:center;"><div style="font-weight:700;color:#c2410c;">Cancel Old SIPs</div><div style="color:#888;font-size:9px;margin-top:3px;"><span class="badge reg" style="font-size:7.5px;">Regulatory</span> 30-day notice</div></div>
+<div style="font-size:16px;color:#ddd;padding:0 4px;">→</div>
+<div style="flex:1;padding:8px 10px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:0 4px 4px 0;font-size:10.5px;text-align:center;"><div style="font-weight:700;color:#15803d;">Create New SIPs</div><div style="color:#888;font-size:9.5px;margin-top:2px;">Updated basket</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="cc-panel" id="cc-redeem">
+<div class="cc-card">
+<div class="cc-card-header">
+<span class="cc-cat reg">Regulatory</span>
+<span class="cc-title">Redemptions</span>
+<span class="cc-impact high">High Impact</span>
+</div>
+<div class="cc-rows">
+<div class="cc-row">
+<div class="cc-row-label">How</div>
+<div class="cc-row-body">Three partial redemption modes are available. Full exit must cancel active SIPs before submitting redemption orders — SIP continuation on a redeemed folio is a common operational error. Large debt redemptions above ₹2 Cr may span multiple days.</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Rules</div>
+<div class="cc-row-body">
+<ul>
+<li><span class="badge impl">Prototype</span> Partial modes: <strong>Proportional</strong> (same % from all) · <strong>Overweight-first</strong> (rebalances while raising cash) · <strong>User-specified</strong></li>
+<li><span class="badge impl">Prototype</span> Full exit: cancel active SIPs first, then submit redemption — system must enforce this sequence</li>
+<li><span class="badge reg">Regulatory</span> Debt redemptions &gt;₹2 Cr may hit daily AMC limits — multi-day execution required</li>
+</ul>
+</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Kalpi</div>
+<div class="cc-row-body">
+<ul>
+<li><span class="badge impl">Prototype</span> Show estimated proceeds + STCG/LTCG tax impact per fund before confirming any redemption</li>
+<li><span class="badge impl">Prototype</span> Full exit: auto-initiate SIP cancellation flow · Block redemption submission until cancellation is confirmed</li>
+<li><span class="badge impl">Prototype</span> &gt;₹2 Cr debt: surface multi-day execution schedule before confirmation</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Partial redemption — ₹20,000 from a ₹1,00,000 portfolio (actual: A=40% B=30% C=20% D=10% · target: A=35% C=25%)</div>
+<div class="rd-modes">
+<div class="rd-col">
+<div class="rd-head"><div class="rd-head-title">Proportional</div><div class="rd-head-sub">Same % from each fund</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund A <span style="font-size:9px;color:#c0392b;">(overweight)</span></div><div class="rd-amt">₹8,000</div><div class="rd-note">20% of ₹40,000</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund B (on target)</div><div class="rd-amt">₹6,000</div><div class="rd-note">20% of ₹30,000</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund C <span style="font-size:9px;color:#15803d;">(underweight)</span></div><div class="rd-amt">₹4,000</div><div class="rd-note">20% of ₹20,000</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund D (on target)</div><div class="rd-amt">₹2,000</div><div class="rd-note">20% of ₹10,000</div></div>
+<div class="rd-cell rd-total"><div class="rd-fund">Total</div><div class="rd-amt">₹20,000</div><div class="rd-note">No rebalancing effect</div></div>
+</div>
+<div class="rd-col">
+<div class="rd-head"><div class="rd-head-title">Overweight-first</div><div class="rd-head-sub">Rebalances while raising cash</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund A <span style="font-size:9px;color:#c0392b;">(overweight)</span></div><div class="rd-amt">₹12,000</div><div class="rd-note">Sell most — corrects drift</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund B (on target)</div><div class="rd-amt">₹6,000</div><div class="rd-note">Proportional share</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund C <span style="font-size:9px;color:#15803d;">(underweight)</span></div><div class="rd-amt">₹0</div><div class="rd-note">Protected — not sold</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund D (on target)</div><div class="rd-amt">₹2,000</div><div class="rd-note">Proportional share</div></div>
+<div class="rd-cell rd-total"><div class="rd-fund">Total</div><div class="rd-amt">₹20,000</div><div class="rd-note">Portfolio rebalanced on exit</div></div>
+</div>
+<div class="rd-col">
+<div class="rd-head"><div class="rd-head-title">User-specified</div><div class="rd-head-sub">Full manual control</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund A</div><div class="rd-amt" style="color:#aaa;">— user input</div><div class="rd-note">&nbsp;</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund B</div><div class="rd-amt" style="color:#aaa;">— user input</div><div class="rd-note">&nbsp;</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund C</div><div class="rd-amt" style="color:#aaa;">— user input</div><div class="rd-note">&nbsp;</div></div>
+<div class="rd-cell"><div class="rd-fund">Fund D</div><div class="rd-amt" style="color:#aaa;">— user input</div><div class="rd-note">&nbsp;</div></div>
+<div class="rd-cell rd-total"><div class="rd-fund">Total</div><div class="rd-amt">₹20,000</div><div class="rd-note">Must equal target amount</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="cc-panel" id="cc-practical">
+<div class="cc-card">
+<div class="cc-card-header">
+<span class="cc-cat data">Infrastructure</span>
+<span class="cc-title">Practical Constraints</span>
+<span class="cc-impact med">Med Impact</span>
+</div>
+<div class="cc-rows">
+<div class="cc-row">
+<div class="cc-row-label">How</div>
+<div class="cc-row-body">Indian MF execution runs on a single-NAV-per-day cycle. All orders route through BSE Star MF. ISIN is the stable fund identifier — scheme names change after rationalisation, ISINs do not.</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Rules</div>
+<div class="cc-row-body">
+<ul>
+<li><span class="badge reg">Regulatory</span> NAV published once daily after market close — no intra-day pricing for any MF</li>
+<li><span class="badge assume">Assumption</span> BSE Star MF: broadest AMC coverage, single API integration starting point</li>
+<li><span class="badge assume">Assumption</span> Use ISIN as canonical fund identifier — scheme names change post-rationalisation, ISINs are stable</li>
+</ul>
+</div>
+</div>
+<div class="cc-row">
+<div class="cc-row-label">Kalpi</div>
+<div class="cc-row-body">All operational edge cases handled at design time — never silently skip or partially execute without user notification.</div>
+</div>
+</div>
+<div class="cc-viz">
+<div class="cc-viz-title">Operational edge cases</div>
+<table class="ec-table">
+<thead><tr><th>Scenario</th><th>Detect</th><th>Handle</th><th>Notify user</th></tr></thead>
+<tbody>
+<tr>
+<td>Market holiday</td>
+<td>BSE/NSE calendar check before submission</td>
+<td>Queue order for next business day — do not submit</td>
+<td>Before confirmation: "Orders will execute on [next date]"</td>
+</tr>
+<tr>
+<td>AMC downtime</td>
+<td>API error / timeout from BSE Star MF</td>
+<td>Retry with exponential backoff · Max 3 attempts</td>
+<td>After 3rd failure: "Fund X order failed — retry tomorrow"</td>
+</tr>
+<tr>
+<td>Failed payment</td>
+<td>Payment gateway callback: declined or timeout</td>
+<td>Halt entire batch — no partial execution</td>
+<td>Immediately: "Payment failed — no orders were placed"</td>
+</tr>
+<tr>
+<td>Folio-bank mismatch</td>
+<td>AMC KYC validation at onboarding</td>
+<td>Block folio creation until bank details reconciled</td>
+<td>At onboarding: "Bank account doesn't match KYC records"</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+</div>
 
 ---
 
