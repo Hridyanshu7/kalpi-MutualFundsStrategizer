@@ -448,6 +448,98 @@
   }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
 
   headings.forEach(h => observer.observe(h));
+
+  // ── Competitor filter chips ──
+  document.querySelectorAll('.comp-filters input[type=checkbox]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var row = document.querySelector('tr[data-row="' + this.dataset.row + '"]');
+      if (row) row.style.display = this.checked ? '' : 'none';
+      this.closest('.chip').classList.toggle('active', this.checked);
+    });
+  });
+
+  // ── Charts (only if Chart.js loaded) ──
+  if (typeof Chart === 'undefined') return;
+
+  // Section 1 — competitive positioning scatter
+  var compCanvas = document.getElementById('comp-chart');
+  if (compCanvas) {
+    var labelPlugin = {
+      id: 'dataLabels',
+      afterDatasetsDraw: function(chart) {
+        var ctx = chart.ctx; ctx.save();
+        chart.data.datasets.forEach(function(ds, i) {
+          chart.getDatasetMeta(i).data.forEach(function(pt, j) {
+            var d = ds.data[j]; if (!d.label) return;
+            var k = d.label === 'Kalpi';
+            ctx.font = (k ? 'bold ' : '') + '10px -apple-system,sans-serif';
+            ctx.fillStyle = k ? '#c0392b' : '#444';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillText(d.label, pt.x, pt.y - (k ? 15 : 11));
+          });
+        });
+        ctx.restore();
+      }
+    };
+    new Chart(compCanvas.getContext('2d'), {
+      type: 'scatter',
+      data: {
+        datasets: [
+          { label: 'No Strategy Builder',
+            data: [{x:2,y:4.5,label:'ET Money'},{x:1,y:4.5,label:'Groww'},{x:1.5,y:4,label:'INDmoney'},{x:3,y:3.5,label:'Kuvera'},{x:1.5,y:3.8,label:'Coin'},{x:4.5,y:1,label:'Value Research'},{x:5,y:0.5,label:'Morningstar'}],
+            backgroundColor:'rgba(150,150,150,0.55)', borderColor:'rgba(100,100,100,0.7)', pointRadius:9, borderWidth:1.5 },
+          { label: 'Partial / Opaque Builder',
+            data: [{x:3.5,y:4.5,label:'Wealthfront'},{x:2.5,y:4,label:'Betterment'},{x:2,y:3.5,label:'M1 Finance'}],
+            backgroundColor:'rgba(234,179,8,0.6)', borderColor:'rgba(202,138,4,0.8)', pointRadius:9, borderWidth:1.5 },
+          { label: 'Kalpi — Transparent Builder',
+            data: [{x:4,y:4.5,label:'Kalpi'}],
+            backgroundColor:'rgba(192,57,43,0.85)', borderColor:'#c0392b', pointRadius:13, borderWidth:2 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: {
+          legend:{ position:'bottom', labels:{ font:{size:11}, color:'#666', boxWidth:12, padding:16 } },
+          tooltip:{ callbacks:{ label:function(c){ return ' '+c.raw.label+' (Research: '+c.raw.x+' / Execution: '+c.raw.y+')'; } } }
+        },
+        scales: {
+          x:{ title:{display:true,text:'Research & Analytics Depth →',color:'#888',font:{size:11}}, min:0, max:5.5, ticks:{color:'#bbb',font:{size:10},stepSize:1}, grid:{color:'#f0f0f0'} },
+          y:{ title:{display:true,text:'Execution Capability →',color:'#888',font:{size:11}}, min:0, max:5.5, ticks:{color:'#bbb',font:{size:10},stepSize:1}, grid:{color:'#f0f0f0'} }
+        }
+      },
+      plugins: [labelPlugin]
+    });
+  }
+
+  // Section 2 — weighting comparison bar chart
+  var wtCanvas = document.getElementById('wt-chart');
+  if (wtCanvas) {
+    new Chart(wtCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Fund A', 'Fund B', 'Fund C', 'Fund D', 'Fund E'],
+        datasets: [
+          { label:'Equal',           data:[20,20,20,20,20],           backgroundColor:'rgba(99,102,241,0.72)', borderRadius:3 },
+          { label:'Score — Linear',  data:[32.2,27.1,20.3,13.6,6.8], backgroundColor:'rgba(192,57,43,0.72)',  borderRadius:3 },
+          { label:'Score — Softmax', data:[27.7,23.8,19.5,16.0,13.1],backgroundColor:'rgba(234,88,12,0.72)',  borderRadius:3 },
+          { label:'Risk-Based',      data:[11.2,14.4,18.3,22.4,33.6],backgroundColor:'rgba(21,128,61,0.72)',  borderRadius:3 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: {
+          legend:{ position:'bottom', labels:{ font:{size:11}, color:'#555', padding:16, boxWidth:12 } },
+          tooltip:{ callbacks:{ label:function(c){ return ' '+c.dataset.label+': '+c.raw+'%'; } } }
+        },
+        scales: {
+          x:{ ticks:{color:'#888',font:{size:11}}, grid:{color:'#f5f5f5'} },
+          y:{ title:{display:true,text:'Allocation (%)',color:'#aaa',font:{size:11}},
+              ticks:{color:'#aaa',font:{size:10},callback:function(v){return v+'%';}},
+              grid:{color:'#f5f5f5'}, max:40 }
+        }
+      }
+    });
+  }
 </script>
 
 </body>

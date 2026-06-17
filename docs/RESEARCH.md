@@ -164,17 +164,6 @@ The market splits into three archetypes: **transaction platforms** (Groww, Coin,
 </div>
 </div>
 
-<script>
-(function(){
-  document.querySelectorAll('.comp-filters input[type=checkbox]').forEach(function(cb){
-    cb.addEventListener('change', function(){
-      var row = document.querySelector('tr[data-row="'+this.dataset.row+'"]');
-      if(row) row.style.display = this.checked ? '' : 'none';
-      this.closest('.chip').classList.toggle('active', this.checked);
-    });
-  });
-})();
-</script>
 
 ### Competitive Summary
 
@@ -354,39 +343,6 @@ Target weights translate to rupee allocations. The weighting method is chosen in
 </div>
 <p class="chart-caption">Same 5 funds, 4 different allocation methods. Fund E (lowest score 20, lowest volatility 6%) gets 6.8% under Score-Linear but 33.6% under Risk-Based. Softmax sits between Linear and Equal — it compresses without flattening.<br>Scores: A=95 · B=80 · C=60 · D=40 · E=20 &nbsp;|&nbsp; Volatility: A=18% · B=14% · C=11% · D=9% · E=6%</p>
 
-<script>
-(function(){
-  var c = document.getElementById('wt-chart');
-  if(!c || typeof Chart==='undefined') return;
-  new Chart(c.getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: ['Fund A', 'Fund B', 'Fund C', 'Fund D', 'Fund E'],
-      datasets: [
-        { label:'Equal',          data:[20,20,20,20,20],              backgroundColor:'rgba(99,102,241,0.72)', borderRadius:3 },
-        { label:'Score — Linear', data:[32.2,27.1,20.3,13.6,6.8],    backgroundColor:'rgba(192,57,43,0.72)',  borderRadius:3 },
-        { label:'Score — Softmax',data:[27.7,23.8,19.5,16.0,13.1],   backgroundColor:'rgba(234,88,12,0.72)',  borderRadius:3 },
-        { label:'Risk-Based',     data:[11.2,14.4,18.3,22.4,33.6],   backgroundColor:'rgba(21,128,61,0.72)',  borderRadius:3 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins: {
-        legend:{ position:'bottom', labels:{ font:{size:11}, color:'#555', padding:16, boxWidth:12 } },
-        tooltip:{ callbacks:{ label:function(c){ return ' '+c.dataset.label+': '+c.raw+'%'; } } }
-      },
-      scales: {
-        x:{ ticks:{color:'#888',font:{size:11}}, grid:{color:'#f5f5f5'} },
-        y:{
-          title:{ display:true, text:'Allocation (%)', color:'#aaa', font:{size:11} },
-          ticks:{ color:'#aaa', font:{size:10}, callback:function(v){ return v+'%'; } },
-          grid:{ color:'#f5f5f5' }, max:40
-        }
-      }
-    }
-  });
-})();
-</script>
 
 - <span class="badge impl">Prototype</span> **Equal (1/N):** Every fund receives the same allocation. Transparent baseline — no assumptions about relative quality
 - <span class="badge impl">Prototype</span> **Score-Based:** Capital proportional to composite score. Two modes: *Softmax* compresses the distribution so the top fund doesn't dominate; *Linear* distributes directly proportional to score
