@@ -11,87 +11,174 @@ title: Kalpi — Research & Product Thinking
 
 ## 1. Competitor Analysis
 
-The market splits into three archetypes: **transaction platforms** (Groww, Coin, ET Money), **research tools** (Value Research, Morningstar), and **robo-advisors** (Wealthfront, Betterment, M1 Finance). No Indian platform meaningfully occupies the fourth — **systematic strategy builder** — which is where Kalpi sits.
+The market splits into three archetypes: **transaction platforms** (Groww, Coin, ET Money), **research tools** (Value Research, Morningstar), and **robo-advisors** (Wealthfront, Betterment, M1 Finance). No Indian platform meaningfully occupies the fourth — **systematic strategy builder** — which is where Kalpi sits. Hover the <strong>ⓘ</strong> icon on any row to see its USP.
 
----
+<div class="comp-matrix">
 
-### ET Money
-- Strong mobile UX, tax P&L tracking, Smart Deposit for idle cash — genuinely useful for mass retail
-- Fund discovery is fully recommendation-driven; no custom rules, no user-defined criteria
-- Risk-adjusted metrics (Sharpe, Alpha) don't surface anywhere in the product
-- **Kalpi's angle:** Replace opaque expert picks with user-defined, auditable rules. Let users save and re-run strategies over time — a concept ET Money has no equivalent for
+<div class="comp-filters">
+<div class="filter-group">
+<span class="fg-label">India</span>
+<label class="chip active"><input type="checkbox" checked data-row="et-money"> ET Money</label>
+<label class="chip active"><input type="checkbox" checked data-row="groww"> Groww</label>
+<label class="chip active"><input type="checkbox" checked data-row="indmoney"> INDmoney</label>
+<label class="chip active"><input type="checkbox" checked data-row="kuvera"> Kuvera</label>
+<label class="chip active"><input type="checkbox" checked data-row="coin"> Coin</label>
+<label class="chip active"><input type="checkbox" checked data-row="vr"> Value Research</label>
+</div>
+<div class="filter-group">
+<span class="fg-label">Global</span>
+<label class="chip"><input type="checkbox" data-row="morningstar"> Morningstar</label>
+<label class="chip"><input type="checkbox" data-row="wealthfront"> Wealthfront</label>
+<label class="chip"><input type="checkbox" data-row="betterment"> Betterment</label>
+<label class="chip"><input type="checkbox" data-row="m1"> M1 Finance</label>
+</div>
+</div>
 
-### Groww
-- Largest Indian MF platform by users; near-zero investment friction; clean SIP management
-- Fund discovery sorts by 1Y return — arguably the worst metric to lead with
-- Zero analytics depth: no volatility, drawdown, or Sharpe visible anywhere
-- **Kalpi's angle:** Serve the analytically-inclined segment Groww ignores. Systematic ranking counteracts 1Y return-chasing behaviour
+<div class="comp-table-scroll">
+<table class="comp-table">
+<thead>
+<tr>
+<th>Platform</th>
+<th>Research Depth</th>
+<th>Risk Analytics</th>
+<th>Strategy Builder</th>
+<th>Execution</th>
+<th>India</th>
+<th>Pricing</th>
+</tr>
+</thead>
+<tbody>
 
-### INDmoney
-- Aggregation across EPF, NPS, US stocks, MF — single net worth view is the core value prop
-- MF selection is recommendation-based, typically shaped by AMC partnerships
-- Analytics are shallow; portfolio construction is goal-bucket style, not rule-based
-- **Kalpi's angle:** Be the expert selection layer — Kalpi generates the basket, execution can happen anywhere. Every fund has a traceable score
+<tr data-row="et-money">
+<td><div class="pname">ET Money <span class="usp-tip" data-usp="USP: Tax P&L tracking and Smart Deposit for idle cash. Strong mobile UX built for mass retail. Gap: Fund discovery is fully recommendation-driven — no custom rules, no risk-adjusted metrics visible.">ⓘ</span></div></td>
+<td><span class="r low">Low</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Free</span></td>
+</tr>
 
-### Kuvera
-- Longest-running free direct-plan platform; portfolio overlap tool is a genuinely rare feature
-- Overlap detection is reactive (shows existing overlap) not proactive (prevents it during construction)
-- No composite scoring, no custom screening, no strategy builder
-- **Kalpi's angle:** Proactive overlap detection at construction time. Let users define what "quality" means — not accept Kuvera's static list
+<tr data-row="groww">
+<td><div class="pname">Groww <span class="usp-tip" data-usp="USP: Largest Indian MF platform by users. Near-zero friction, clean SIP management. Gap: Sorts by 1Y return — the least reliable metric. Zero analytics depth, no Sharpe or drawdown anywhere.">ⓘ</span></div></td>
+<td><span class="r none">Minimal</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Free</span></td>
+</tr>
 
-### Coin (Zerodha)
-- Natural choice for existing Zerodha equity users — consolidated holdings, trusted brand, no commission
-- MF is a secondary product; analytics are essentially absent, fund comparison requires leaving the app
-- **Kalpi's angle:** Make MF the primary analytical product. For equity-literate users, analytical depth is a feature, not a complexity barrier
+<tr data-row="indmoney">
+<td><div class="pname">INDmoney <span class="usp-tip" data-usp="USP: Multi-asset aggregation — EPF, NPS, US stocks and MF in a single net worth view. Gap: MF selection shaped by AMC partnerships. Goal-bucket style, not rule-based.">ⓘ</span></div></td>
+<td><span class="r low">Low</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Free</span></td>
+</tr>
 
-### Value Research
-- Gold standard for Indian MF research; comprehensive metric coverage, trusted star ratings since 1996
-- Research and execution are disconnected — users research on VR, invest elsewhere
-- Star rating methodology is fixed; users cannot customise weights or build their own scoring model
-- Rolling return charts are illustrative, not screen-able or actionable
-- **Kalpi's angle:** Let users build their own rating — their metrics, their weights. Research flows directly into portfolio construction in one unbroken flow
+<tr data-row="kuvera">
+<td><div class="pname">Kuvera <span class="usp-tip" data-usp="USP: Oldest free direct-plan platform. Unique portfolio overlap detection tool. Gap: Overlap detection is reactive (shows existing) not proactive (prevents at construction time). No custom scoring.">ⓘ</span></div></td>
+<td><span class="r med">Medium</span></td>
+<td><span class="r low">Basic</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Free</span></td>
+</tr>
 
-### Morningstar
-- Global benchmark; style box, analyst ratings, and factor analysis are genuinely sophisticated
-- India coverage is incomplete; premium data is priced for advisors, not retail investors
-- Research-report oriented — analysis does not connect to execution
-- **Kalpi's angle:** Bring Morningstar-grade quantitative rigour to Indian retail at zero cost, and make it actionable — analysis flows directly into a portfolio
+<tr data-row="coin">
+<td><div class="pname">Coin <span class="usp-tip" data-usp="USP: Zerodha ecosystem, zero commission, trusted brand. Natural fit for equity-first investors. Gap: MF is a secondary product. Analytics absent — fund comparison requires leaving the app.">ⓘ</span></div></td>
+<td><span class="r none">Minimal</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Free</span></td>
+</tr>
 
-### Wealthfront
-- Best US robo-advisor; automated tax-loss harvesting and direct indexing are genuine moats
-- ETF-centric and US-only; fund selection logic is a black box users cannot inspect or override
-- **Kalpi's angle:** Apply Wealthfront's systematic, rules-driven philosophy to India's active MF market — same outcome, full transparency
+<tr data-row="vr">
+<td><div class="pname">Value Research <span class="usp-tip" data-usp="USP: Gold standard for India MF research since 1996. Comprehensive metric coverage and trusted star ratings. Gap: Fixed methodology — users cannot customise weights. Research and execution are fully disconnected.">ⓘ</span></div></td>
+<td><span class="r high">High</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r med">Freemium</span></td>
+</tr>
 
-### Betterment
-- Goal-bucket UX and behavioural nudges are best-in-class; tax-coordinated portfolios are sophisticated
-- No user control over fund selection; opaque methodology; single model portfolio per goal
-- **Kalpi's angle:** Combine Betterment's goal clarity with full strategy transparency. Allow multiple strategies per goal and surface India's complex tax implications explicitly
+<tr data-row="morningstar" style="display:none">
+<td><div class="pname">Morningstar <span class="usp-tip" data-usp="USP: Global benchmark — style box, analyst ratings, factor analysis. Genuinely sophisticated. Gap: India coverage incomplete and priced for advisors. Analysis does not connect to execution.">ⓘ</span></div></td>
+<td><span class="r high">Very High</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r low">Partial</span></td>
+<td><span class="r low">Paid</span></td>
+</tr>
 
-### M1 Finance
-- "Pie" portfolio concept is the closest analogue to Kalpi — target weight slices, auto-distribution on invest
-- Pies are allocation tools, not selection tools — M1 does not help users decide what goes in the pie
-- US-only; stocks and ETFs, not active MFs; no systematic scoring or ranking upstream
-- **Kalpi's angle:** Add the selection layer M1 is missing — filter → rank → score → then construct the pie. Apply this to India's active MF market where fund selection genuinely matters
+<tr data-row="wealthfront" style="display:none">
+<td><div class="pname">Wealthfront <span class="usp-tip" data-usp="USP: Best US robo-advisor. Automated tax-loss harvesting and direct indexing are genuine moats. Gap: ETF-centric, US-only. Fund selection is a black box users cannot inspect or override.">ⓘ</span></div></td>
+<td><span class="r med">Medium</span></td>
+<td><span class="r med">Medium</span></td>
+<td><span class="r low">Opaque auto</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r low">Paid</span></td>
+</tr>
 
----
+<tr data-row="betterment" style="display:none">
+<td><div class="pname">Betterment <span class="usp-tip" data-usp="USP: Best-in-class goal-bucket UX and behavioural nudges. Tax-coordinated portfolios. Gap: No user control over fund selection. Single model portfolio per goal. US-only.">ⓘ</span></div></td>
+<td><span class="r med">Medium</span></td>
+<td><span class="r low">Basic</span></td>
+<td><span class="r low">Goal-based</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r low">Paid</span></td>
+</tr>
+
+<tr data-row="m1" style="display:none">
+<td><div class="pname">M1 Finance <span class="usp-tip" data-usp="USP: Pie portfolio concept — target weight slices with auto-distribution. Fractional shares. Gap: Pies are allocation tools, not selection tools. M1 doesn't help decide what goes in the pie. US-only.">ⓘ</span></div></td>
+<td><span class="r low">Low</span></td>
+<td><span class="r low">Basic</span></td>
+<td><span class="r med">Alloc. only</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r none">None</span></td>
+<td><span class="r med">Freemium</span></td>
+</tr>
+
+<tr class="kalpi-row">
+<td><div class="pname">Kalpi <span class="usp-tip" data-usp="USP: Only platform combining deep risk analytics + transparent rule-based strategy builder + India MF execution in a single, unbroken flow. Users define their own filters, weights, and scoring models — every fund has a traceable score.">★</span></div></td>
+<td><span class="r high">High</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Transparent</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r high">Full</span></td>
+<td><span class="r med">TBD</span></td>
+</tr>
+
+</tbody>
+</table>
+</div>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('.comp-filters input[type=checkbox]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      var row = document.querySelector('tr[data-row="'+this.dataset.row+'"]');
+      if(row) row.style.display = this.checked ? '' : 'none';
+      this.closest('.chip').classList.toggle('active', this.checked);
+    });
+  });
+})();
+</script>
 
 ### Competitive Summary
 
-| Platform | Research Depth | Transaction | Strategy Builder | India |
-|---|---|---|---|---|
-| ET Money | Low | Yes | No | Yes |
-| Groww | Minimal | Yes | No | Yes |
-| INDmoney | Low | Yes | No | Yes |
-| Kuvera | Medium | Yes | No | Yes |
-| Coin | Minimal | Yes | No | Yes |
-| Value Research | High | No | No | Yes |
-| Morningstar | Very High | No | No | Partial |
-| Wealthfront | Medium | Yes (US) | No (opaque) | No |
-| Betterment | Medium | Yes (US) | No (opaque) | No |
-| M1 Finance | Low | Yes (US) | Allocation only | No |
-| **Kalpi** | **High** | **Yes** | **Yes (transparent)** | **Yes** |
-
-**The white space:** No Indian platform combines analytical depth + transparent strategy building + execution in a single flow.
+**The white space:** No Indian platform combines analytical depth + transparent strategy building + execution in a single flow. Kalpi is the only product where a user can define their own screening rules, assign weights, score funds, and invest — without leaving the platform or accepting someone else's methodology.
 
 ---
 
