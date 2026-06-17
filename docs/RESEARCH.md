@@ -184,12 +184,86 @@ The market splits into three archetypes: **transaction platforms** (Groww, Coin,
 
 ## 2. Mutual Fund Framework
 
+<div class="fw-pipeline">
+<div class="fw-node">
+<div class="fw-node-step">Step 01</div>
+<div class="fw-node-title">Filter</div>
+<div class="fw-node-sub">87 → 42 funds pass all gates</div>
+<div class="fw-node-badges"><span class="badge impl">Prototype</span></div>
+</div>
+<div class="fw-node">
+<div class="fw-node-step">Step 02</div>
+<div class="fw-node-title">Rank</div>
+<div class="fw-node-sub">42 funds ordered 0–100 per metric</div>
+<div class="fw-node-badges"><span class="badge impl">Prototype</span></div>
+</div>
+<div class="fw-node">
+<div class="fw-node-step">Step 03</div>
+<div class="fw-node-title">Score</div>
+<div class="fw-node-sub">Single composite score per fund</div>
+<div class="fw-node-badges"><span class="badge impl">Prototype</span></div>
+</div>
+<div class="fw-node">
+<div class="fw-node-step">Step 04</div>
+<div class="fw-node-title">Construct</div>
+<div class="fw-node-sub">User picks Top N from ranked list</div>
+<div class="fw-node-badges"><span class="badge impl">Prototype</span></div>
+</div>
+<div class="fw-node">
+<div class="fw-node-step">Step 05</div>
+<div class="fw-node-title">Allocate</div>
+<div class="fw-node-sub">Rupee distribution by chosen method</div>
+<div class="fw-node-badges"><span class="badge impl">Prototype</span></div>
+</div>
+</div>
+
 ### Filtering
 Filters define the floor — they eliminate the ineligible, not identify the best. <span class="badge impl">Prototype</span> All filters use AND logic; a fund that fails any single condition is out.
 
-- <span class="badge impl">Prototype</span> **Minimum viability gates** apply to every strategy without exception: AUM ≥ ₹500 Cr <span class="badge assume">Assumption</span> (below this, large redemptions can move the NAV), Fund Age ≥ 3 years <span class="badge assume">Assumption</span> (insufficient data before this), Direct plan must exist
-- **Qualitative gates:** Expense ratio cap >1.2% for equity <span class="badge assume">Assumption</span>, manager tenure floor, <span class="badge reg">Regulatory</span> SEBI riskometer alignment with the user's declared risk tolerance
-- **Section-specific gates:** For Debt — modified duration and credit quality (AAA %, Sovereign %) matter. For Hybrid — verify actual equity/debt allocation matches the mandate
+<table class="gate-table">
+<thead>
+<tr><th>Filter Gate</th><th>Equity</th><th>Debt</th><th>Hybrid</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="gate-name">AUM floor</span><div class="gate-bgs"><span class="badge impl">Prototype</span><span class="badge assume">Assumption</span></div></td>
+<td><span class="gc yes">≥ ₹500 Cr</span></td><td><span class="gc yes">≥ ₹500 Cr</span></td><td><span class="gc yes">≥ ₹500 Cr</span></td>
+</tr>
+<tr>
+<td><span class="gate-name">Fund Age</span><div class="gate-bgs"><span class="badge impl">Prototype</span><span class="badge assume">Assumption</span></div></td>
+<td><span class="gc yes">≥ 3 years</span></td><td><span class="gc yes">≥ 3 years</span></td><td><span class="gc yes">≥ 3 years</span></td>
+</tr>
+<tr>
+<td><span class="gate-name">Direct Plan</span><div class="gate-bgs"><span class="badge impl">Prototype</span></div></td>
+<td><span class="gc yes">Required</span></td><td><span class="gc yes">Required</span></td><td><span class="gc yes">Required</span></td>
+</tr>
+<tr>
+<td><span class="gate-name">Expense Ratio cap</span><div class="gate-bgs"><span class="badge assume">Assumption</span></div></td>
+<td><span class="gc mod">&gt; 1.2%</span></td><td><span class="gc mod">&gt; 0.5%</span></td><td><span class="gc mod">&gt; 1.0%</span></td>
+</tr>
+<tr>
+<td><span class="gate-name">SEBI Riskometer</span><div class="gate-bgs"><span class="badge reg">Regulatory</span></div></td>
+<td><span class="gc reg">Must match user risk</span></td><td><span class="gc reg">Must match user risk</span></td><td><span class="gc reg">Must match user risk</span></td>
+</tr>
+<tr>
+<td><span class="gate-name">Manager Tenure</span><div class="gate-bgs"><span class="badge assume">Assumption</span></div></td>
+<td><span class="gc mod">≥ 1 year</span></td><td><span class="gc mod">≥ 1 year</span></td><td><span class="gc mod">≥ 1 year</span></td>
+</tr>
+<tr>
+<td><span class="gate-name">Modified Duration</span></td>
+<td><span class="gc na">—</span></td><td><span class="gc mod">User-defined</span></td><td><span class="gc mod">Partial</span></td>
+</tr>
+<tr>
+<td><span class="gate-name">Credit Quality (AAA%)</span></td>
+<td><span class="gc na">—</span></td><td><span class="gc mod">User-defined</span></td><td><span class="gc mod">Partial</span></td>
+</tr>
+<tr>
+<td><span class="gate-name">Equity mandate check</span><div class="gate-bgs"><span class="badge reg">Regulatory</span></div></td>
+<td><span class="gc na">—</span></td><td><span class="gc na">—</span></td><td><span class="gc reg">≥ 65% equity</span></td>
+</tr>
+</tbody>
+</table>
+
 - <span class="badge impl">Prototype</span> **UX principle:** Show live fund count as filters are added. Warn below 5 funds; never block. Pre-populate sensible defaults so users aren't starting from zero
 
 ### Ranking
@@ -199,6 +273,59 @@ Ranking orders eligible funds from best to worst. Raw metric values across diffe
 - <span class="badge impl">Prototype</span> User-defined weights are applied across selected metrics to produce a single composite score per fund
 - **Metric priority:** Prefer risk-adjusted returns (Sharpe, Sortino, Alpha) and rolling returns over trailing returns. 1Y return is the least reliable signal — highly sensitive to the measurement start date
 - **Pool-relative scoring:** A fund with 12% 3Y CAGR scores differently depending on what else is in the pool. This is intentional — ranking is always relative to the selected universe
+
+<div class="tbl-note">
+<strong>Worked example</strong> — weights: Sharpe 40% · Expense Ratio 30% · 3Y CAGR 30%&nbsp;&nbsp;
+<span class="badge impl">Prototype</span> percentile normalisation &nbsp;
+<span class="badge assume">Assumption</span> metric &amp; weight choices are illustrative
+</div>
+<table class="rank-table">
+<thead>
+<tr>
+<th>Fund</th>
+<th>Sharpe 3Y<br>(wt: 40%)</th>
+<th>Expense Ratio<br>(wt: 30%)</th>
+<th>3Y CAGR<br>(wt: 30%)</th>
+<th>Score</th>
+<th>Rank</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mirae Asset Large Cap</td>
+<td><span class="raw">1.42</span> <span class="arr">→</span> <span class="pct">100</span></td>
+<td><span class="raw">0.54%</span> <span class="arr">→</span> <span class="pct">100</span></td>
+<td><span class="raw">16.8%</span> <span class="arr">→</span> <span class="pct">67</span></td>
+<td class="score-cell">90</td>
+<td class="rank-cell">#1</td>
+</tr>
+<tr>
+<td>Axis Bluechip</td>
+<td><span class="raw">1.31</span> <span class="arr">→</span> <span class="pct">67</span></td>
+<td><span class="raw">0.56%</span> <span class="arr">→</span> <span class="pct">67</span></td>
+<td><span class="raw">15.2%</span> <span class="arr">→</span> <span class="pct">33</span></td>
+<td class="score-cell">57</td>
+<td class="rank-cell">#2</td>
+</tr>
+<tr>
+<td>SBI Bluechip</td>
+<td><span class="raw">0.98</span> <span class="arr">→</span> <span class="pct">0</span></td>
+<td><span class="raw">0.84%</span> <span class="arr">→</span> <span class="pct">33</span></td>
+<td><span class="raw">17.3%</span> <span class="arr">→</span> <span class="pct">100</span></td>
+<td class="score-cell">40</td>
+<td class="rank-cell">#3</td>
+</tr>
+<tr>
+<td>HDFC Top 100</td>
+<td><span class="raw">1.08</span> <span class="arr">→</span> <span class="pct">33</span></td>
+<td><span class="raw">1.02%</span> <span class="arr">→</span> <span class="pct">0</span></td>
+<td><span class="raw">13.6%</span> <span class="arr">→</span> <span class="pct">0</span></td>
+<td class="score-cell">13</td>
+<td class="rank-cell">#4</td>
+</tr>
+</tbody>
+</table>
+<p style="font-size:11px;color:#888;margin-top:4px;font-style:italic;">SBI Bluechip has the best 3Y CAGR (17.3%) but ranks #3 — high expense ratio (0.84%) and low Sharpe (0.98) drag its composite score to 40. Multi-factor ranking prevents return-chasing.</p>
 
 ### Scoring
 <span class="badge impl">Prototype</span> The composite score (0–100) serves three roles: determines rank order, drives capital allocation in score-based weighting, and enables threshold decisions ("only carry funds scoring above 60").
@@ -217,6 +344,49 @@ Once funds are scored and ranked, the eligible pool is assembled into a basket.
 
 ### Weighting & Capital Allocation
 Target weights translate to rupee allocations. The weighting method is chosen independently of filtering and ranking — any ranked pool can use any method.
+
+<div class="chart-note">
+<span class="badge impl">Prototype</span> All four methods implemented &nbsp;
+<span class="badge assume">Assumption</span> 40% single-fund concentration flag
+</div>
+<div class="chart-wrap">
+<canvas id="wt-chart"></canvas>
+</div>
+<p class="chart-caption">Same 5 funds, 4 different allocation methods. Fund E (lowest score 20, lowest volatility 6%) gets 6.8% under Score-Linear but 33.6% under Risk-Based. Softmax sits between Linear and Equal — it compresses without flattening.<br>Scores: A=95 · B=80 · C=60 · D=40 · E=20 &nbsp;|&nbsp; Volatility: A=18% · B=14% · C=11% · D=9% · E=6%</p>
+
+<script>
+(function(){
+  var c = document.getElementById('wt-chart');
+  if(!c || typeof Chart==='undefined') return;
+  new Chart(c.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: ['Fund A', 'Fund B', 'Fund C', 'Fund D', 'Fund E'],
+      datasets: [
+        { label:'Equal',          data:[20,20,20,20,20],              backgroundColor:'rgba(99,102,241,0.72)', borderRadius:3 },
+        { label:'Score — Linear', data:[32.2,27.1,20.3,13.6,6.8],    backgroundColor:'rgba(192,57,43,0.72)',  borderRadius:3 },
+        { label:'Score — Softmax',data:[27.7,23.8,19.5,16.0,13.1],   backgroundColor:'rgba(234,88,12,0.72)',  borderRadius:3 },
+        { label:'Risk-Based',     data:[11.2,14.4,18.3,22.4,33.6],   backgroundColor:'rgba(21,128,61,0.72)',  borderRadius:3 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: {
+        legend:{ position:'bottom', labels:{ font:{size:11}, color:'#555', padding:16, boxWidth:12 } },
+        tooltip:{ callbacks:{ label:function(c){ return ' '+c.dataset.label+': '+c.raw+'%'; } } }
+      },
+      scales: {
+        x:{ ticks:{color:'#888',font:{size:11}}, grid:{color:'#f5f5f5'} },
+        y:{
+          title:{ display:true, text:'Allocation (%)', color:'#aaa', font:{size:11} },
+          ticks:{ color:'#aaa', font:{size:10}, callback:function(v){ return v+'%'; } },
+          grid:{ color:'#f5f5f5' }, max:40
+        }
+      }
+    }
+  });
+})();
+</script>
 
 - <span class="badge impl">Prototype</span> **Equal (1/N):** Every fund receives the same allocation. Transparent baseline — no assumptions about relative quality
 - <span class="badge impl">Prototype</span> **Score-Based:** Capital proportional to composite score. Two modes: *Softmax* compresses the distribution so the top fund doesn't dominate; *Linear* distributes directly proportional to score
