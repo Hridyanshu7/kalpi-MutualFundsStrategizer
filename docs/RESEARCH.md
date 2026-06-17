@@ -338,8 +338,66 @@ Target weights translate to rupee allocations. The weighting method is chosen in
 <span class="badge impl">Prototype</span> All four methods implemented &nbsp;
 <span class="badge assume">Assumption</span> 40% single-fund concentration flag
 </div>
-<div class="chart-wrap">
-<canvas id="wt-chart"></canvas>
+<div class="css-chart">
+<div class="css-chart-body">
+<div class="css-y-axis"><span>40%</span><span>30%</span><span>20%</span><span>10%</span><span>0%</span></div>
+<div class="css-chart-area">
+<div class="css-gridlines"><div></div><div></div><div></div><div></div><div></div></div>
+<div class="css-bar-groups">
+<div class="css-bar-group">
+<div class="css-bars">
+<div class="css-bar b-eq"  style="height:100px" title="Equal: 20%"></div>
+<div class="css-bar b-lin" style="height:161px" title="Score-Linear: 32.2%"></div>
+<div class="css-bar b-sfx" style="height:139px" title="Score-Softmax: 27.7%"></div>
+<div class="css-bar b-rsk" style="height: 56px" title="Risk-Based: 11.2%"></div>
+</div>
+<div class="css-bar-glabel">A<br><small>S:95 V:18%</small></div>
+</div>
+<div class="css-bar-group">
+<div class="css-bars">
+<div class="css-bar b-eq"  style="height:100px" title="Equal: 20%"></div>
+<div class="css-bar b-lin" style="height:136px" title="Score-Linear: 27.1%"></div>
+<div class="css-bar b-sfx" style="height:119px" title="Score-Softmax: 23.8%"></div>
+<div class="css-bar b-rsk" style="height: 72px" title="Risk-Based: 14.4%"></div>
+</div>
+<div class="css-bar-glabel">B<br><small>S:80 V:14%</small></div>
+</div>
+<div class="css-bar-group">
+<div class="css-bars">
+<div class="css-bar b-eq"  style="height:100px" title="Equal: 20%"></div>
+<div class="css-bar b-lin" style="height:102px" title="Score-Linear: 20.3%"></div>
+<div class="css-bar b-sfx" style="height: 98px" title="Score-Softmax: 19.5%"></div>
+<div class="css-bar b-rsk" style="height: 92px" title="Risk-Based: 18.3%"></div>
+</div>
+<div class="css-bar-glabel">C<br><small>S:60 V:11%</small></div>
+</div>
+<div class="css-bar-group">
+<div class="css-bars">
+<div class="css-bar b-eq"  style="height:100px" title="Equal: 20%"></div>
+<div class="css-bar b-lin" style="height: 68px" title="Score-Linear: 13.6%"></div>
+<div class="css-bar b-sfx" style="height: 80px" title="Score-Softmax: 16.0%"></div>
+<div class="css-bar b-rsk" style="height:112px" title="Risk-Based: 22.4%"></div>
+</div>
+<div class="css-bar-glabel">D<br><small>S:40 V:9%</small></div>
+</div>
+<div class="css-bar-group">
+<div class="css-bars">
+<div class="css-bar b-eq"  style="height:100px" title="Equal: 20%"></div>
+<div class="css-bar b-lin" style="height: 34px" title="Score-Linear: 6.8%"></div>
+<div class="css-bar b-sfx" style="height: 66px" title="Score-Softmax: 13.1%"></div>
+<div class="css-bar b-rsk" style="height:168px" title="Risk-Based: 33.6%"></div>
+</div>
+<div class="css-bar-glabel">E<br><small>S:20 V:6%</small></div>
+</div>
+</div>
+</div>
+</div>
+<div class="css-legend">
+<span><i class="css-ld" style="background:#6366f1"></i> Equal</span>
+<span><i class="css-ld" style="background:#c0392b"></i> Score — Linear</span>
+<span><i class="css-ld" style="background:#ea580c"></i> Score — Softmax</span>
+<span><i class="css-ld" style="background:#15803d"></i> Risk-Based</span>
+</div>
 </div>
 <p class="chart-caption">Same 5 funds, 4 different allocation methods. Fund E (lowest score 20, lowest volatility 6%) gets 6.8% under Score-Linear but 33.6% under Risk-Based. Softmax sits between Linear and Equal — it compresses without flattening.<br>Scores: A=95 · B=80 · C=60 · D=40 · E=20 &nbsp;|&nbsp; Volatility: A=18% · B=14% · C=11% · D=9% · E=6%</p>
 

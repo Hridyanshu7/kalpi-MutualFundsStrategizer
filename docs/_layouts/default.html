@@ -389,6 +389,43 @@
     .tbl-note { font-size:11px; color:#777; margin-bottom:6px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; line-height:1.6; }
     .chart-note { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; font-size:11px; color:#666; align-items:center; }
 
+    /* ── CSS Bar Chart ── */
+    .css-chart { margin: 12px 0 16px; }
+    .css-chart-body { display: flex; }
+    .css-y-axis {
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 0 8px 24px 0; font-size: 9px; color: #bbb; text-align: right;
+      width: 32px; flex-shrink: 0;
+    }
+    .css-chart-area {
+      flex: 1; position: relative; height: 200px;
+      border-left: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5;
+    }
+    .css-gridlines {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: space-between;
+      pointer-events: none;
+    }
+    .css-gridlines div { border-top: 1px dashed #f0f0f0; }
+    .css-gridlines div:first-child { border-top: none; }
+    .css-bar-groups {
+      position: absolute; inset: 0;
+      display: flex; align-items: flex-end; justify-content: space-around; padding: 0 8px;
+    }
+    .css-bar-group { display: flex; flex-direction: column; align-items: center; }
+    .css-bars { display: flex; gap: 2px; align-items: flex-end; }
+    .css-bar { width: 13px; border-radius: 2px 2px 0 0; transition: opacity 0.15s; flex-shrink: 0; }
+    .css-bar:hover { opacity: 0.7; }
+    .b-eq  { background: #6366f1; }
+    .b-lin { background: #c0392b; }
+    .b-sfx { background: #ea580c; }
+    .b-rsk { background: #15803d; }
+    .css-bar-glabel { font-size: 10px; color: #666; text-align: center; margin-top: 5px; line-height: 1.3; }
+    .css-bar-glabel small { font-size: 8.5px; color: #bbb; }
+    .css-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: #555; }
+    .css-legend span { display: flex; align-items: center; gap: 5px; }
+    .css-ld { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
     /* Responsive */
     @media (max-width: 860px) {
       #sidebar { display: none; }
@@ -458,89 +495,6 @@
     });
   });
 
-  // ── Charts (only if Chart.js loaded) ──
-  if (typeof Chart !== 'undefined') {
-
-  // Section 1 — competitive positioning scatter
-  var compCanvas = document.getElementById('comp-chart');
-  if (compCanvas) {
-    var labelPlugin = {
-      id: 'dataLabels',
-      afterDatasetsDraw: function(chart) {
-        var ctx = chart.ctx; ctx.save();
-        chart.data.datasets.forEach(function(ds, i) {
-          chart.getDatasetMeta(i).data.forEach(function(pt, j) {
-            var d = ds.data[j]; if (!d.label) return;
-            var k = d.label === 'Kalpi';
-            ctx.font = (k ? 'bold ' : '') + '10px -apple-system,sans-serif';
-            ctx.fillStyle = k ? '#c0392b' : '#444';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-            ctx.fillText(d.label, pt.x, pt.y - (k ? 15 : 11));
-          });
-        });
-        ctx.restore();
-      }
-    };
-    new Chart(compCanvas.getContext('2d'), {
-      type: 'scatter',
-      data: {
-        datasets: [
-          { label: 'No Strategy Builder',
-            data: [{x:2,y:4.5,label:'ET Money'},{x:1,y:4.5,label:'Groww'},{x:1.5,y:4,label:'INDmoney'},{x:3,y:3.5,label:'Kuvera'},{x:1.5,y:3.8,label:'Coin'},{x:4.5,y:1,label:'Value Research'},{x:5,y:0.5,label:'Morningstar'}],
-            backgroundColor:'rgba(150,150,150,0.55)', borderColor:'rgba(100,100,100,0.7)', pointRadius:9, borderWidth:1.5 },
-          { label: 'Partial / Opaque Builder',
-            data: [{x:3.5,y:4.5,label:'Wealthfront'},{x:2.5,y:4,label:'Betterment'},{x:2,y:3.5,label:'M1 Finance'}],
-            backgroundColor:'rgba(234,179,8,0.6)', borderColor:'rgba(202,138,4,0.8)', pointRadius:9, borderWidth:1.5 },
-          { label: 'Kalpi — Transparent Builder',
-            data: [{x:4,y:4.5,label:'Kalpi'}],
-            backgroundColor:'rgba(192,57,43,0.85)', borderColor:'#c0392b', pointRadius:13, borderWidth:2 }
-        ]
-      },
-      options: {
-        responsive:true, maintainAspectRatio:false,
-        plugins: {
-          legend:{ position:'bottom', labels:{ font:{size:11}, color:'#666', boxWidth:12, padding:16 } },
-          tooltip:{ callbacks:{ label:function(c){ return ' '+c.raw.label+' (Research: '+c.raw.x+' / Execution: '+c.raw.y+')'; } } }
-        },
-        scales: {
-          x:{ title:{display:true,text:'Research & Analytics Depth →',color:'#888',font:{size:11}}, min:0, max:5.5, ticks:{color:'#bbb',font:{size:10},stepSize:1}, grid:{color:'#f0f0f0'} },
-          y:{ title:{display:true,text:'Execution Capability →',color:'#888',font:{size:11}}, min:0, max:5.5, ticks:{color:'#bbb',font:{size:10},stepSize:1}, grid:{color:'#f0f0f0'} }
-        }
-      },
-      plugins: [labelPlugin]
-    });
-  }
-
-  // Section 2 — weighting comparison bar chart
-  var wtCanvas = document.getElementById('wt-chart');
-  if (wtCanvas) {
-    new Chart(wtCanvas.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: ['Fund A', 'Fund B', 'Fund C', 'Fund D', 'Fund E'],
-        datasets: [
-          { label:'Equal',           data:[20,20,20,20,20],           backgroundColor:'rgba(99,102,241,0.72)', borderRadius:3 },
-          { label:'Score — Linear',  data:[32.2,27.1,20.3,13.6,6.8], backgroundColor:'rgba(192,57,43,0.72)',  borderRadius:3 },
-          { label:'Score — Softmax', data:[27.7,23.8,19.5,16.0,13.1],backgroundColor:'rgba(234,88,12,0.72)',  borderRadius:3 },
-          { label:'Risk-Based',      data:[11.2,14.4,18.3,22.4,33.6],backgroundColor:'rgba(21,128,61,0.72)',  borderRadius:3 }
-        ]
-      },
-      options: {
-        responsive:true, maintainAspectRatio:false,
-        plugins: {
-          legend:{ position:'bottom', labels:{ font:{size:11}, color:'#555', padding:16, boxWidth:12 } },
-          tooltip:{ callbacks:{ label:function(c){ return ' '+c.dataset.label+': '+c.raw+'%'; } } }
-        },
-        scales: {
-          x:{ ticks:{color:'#888',font:{size:11}}, grid:{color:'#f5f5f5'} },
-          y:{ title:{display:true,text:'Allocation (%)',color:'#aaa',font:{size:11}},
-              ticks:{color:'#aaa',font:{size:10},callback:function(v){return v+'%';}},
-              grid:{color:'#f5f5f5'}, max:40 }
-        }
-      }
-    });
-  }
-  } // end Chart guard
 </script>
 
 </body>
